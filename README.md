@@ -1,3 +1,10 @@
+
+
+The following read me file is old and soon will be replaced.
+
+
+
+
 This directory contains the implementations of various SFA APIs and services.
 
 Aggregate Manager
