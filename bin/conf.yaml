@@ -1,0 +1,6 @@
+:auth:
+  :entity_cert: /root/.omf/user_cert.pem
+  :entity_key: /root/.omf/user_cert.pkey
+:rest:
+  :server: localhost
+  :port: 8001

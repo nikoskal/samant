@@ -1,0 +1,197 @@
+#!/usr/bin/env ruby
+BIN_DIR = File.dirname(File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__)
+TOP_DIR = File.join(BIN_DIR, '..')
+$: << File.join(TOP_DIR, 'lib')
+
+require 'json'
+
+OUT_FILE = 'nitos_nodes_out.json'
+BASE_CMC_IP = '10.1.0'
+OUTDOOR_DOMAIN = 'omf:nitos.outdoor'
+INDOOR_DOMAIN = 'omf:nitos.indoor'
+OFFICE_DOMAIN = 'omf:nitos.office'
+BASE_URN = 'urn:publicid:IDN+omf:nitos+node+'
+
+infile = ARGV[0]
+
+json = JSON.parse(File.read(infile))
+
+@base_node = {
+              name: "",
+              hostname: "",
+              urn: "",
+              interfaces_attributes: [
+                {
+                  name: "",
+                  role: "control",
+                  mac: "",
+                  ips_attributes: [
+                    {
+                      address: "",
+                      netmask: "255.255.255.0",
+                      ip_type: "ipv4"
+                    }
+                  ]
+                },
+                {
+                  name: "",
+                  role: "experimental",
+                  mac: ""
+                }
+              ],
+              cmc_attributes: {
+                name: "",
+                mac: "09:A2:DA:0D:F0:00",
+                ip_attributes: {
+                  address: "",
+                  netmask: "255.255.255.0",
+                  ip_type: "ipv4"
+                }
+              }
+            }
+
+@diskless_info =  {
+                    hardware_type: "PC-Diskless",
+                    cpus_attributes: [
+                      {
+                        cpu_type: "VIA Esther processor 1000MHz",
+                        cores: 1,
+                        threads: 1,
+                        cache_l1: "32 KB",
+                        cache_l2: "0 MB"
+                      }
+                    ],
+                    ram: "0.5 GB",
+                    ram_type: "DIMM",
+                    hd_capacity: "59.6263 GB"
+                  }
+@orbit_info =  {
+                  hardware_type: "PC-Orbit",
+                  cpus_attributes: [
+                    {
+                      cpu_type: "AMD Geode LX800 @ 500 MHz",
+                      cores: 1,
+                      threads: 1,
+                      cache_l1: "0 KB",
+                      cache_l2: "0 MB"
+                    }
+                  ],
+                  ram: "256 MB",
+                  ram_type: "DDR DRAM",
+                  hd_capacity: "59.6263 GB"
+                }
+@grid_info =  {
+                hardware_type: "PC-Grid",
+                cpus_attributes: [
+                  {
+                    cpu_type: "Intel(R) Core(TM)2 Duo CPU P8400 @ 2.26GHz",
+                    cores: 2,
+                    threads: 2,
+                    cache_l1: "32 KB",
+                    cache_l2: "3 MB"
+                  }
+                ],
+                ram: "1.8905 GB",
+                ram_type: "DIMM Synchronous",
+                hd_capacity: "59.6263 GB"
+              }
+@icarus_info =  {
+                  hardware_type: "PC-Icarus",
+                  cpus_attributes: [
+                    {
+                      cpu_type: "Intel(R) Core(TM) i7-3770 CPU @ 3.40GHz",
+                      cores: 4,
+                      threads: 8,
+                      cache_l1: "32 KB",
+                      cache_l2: "8 MB"
+                    }
+                  ],
+                  ram: "4 GB",
+                  ram_type: "DIMM DDR3 Synchronous 1600 MHz",
+                  hd_capacity: "111 GB"
+                }
+
+
+#adds i to the last element of the mac address
+def calc_mac(base_mac, i = 1)
+  mac_array = base_mac.split(/:/)
+
+  mac_array[-1] = sprintf("%02x", mac_array.last.hex + i).upcase
+  mac_array.join(":")
+end
+
+#adds i to the last element of the mac address
+def calc_cmc_mac(base_mac, i = 1)
+  mac_array = base_mac.split(/:/)
+  mac_array[-2] = "F%d" % [i / 100]
+  mac_array[-1] = "%02d" % [i % 100]
+  mac_array.join(":")
+end
+
+def calc_cmc_ip(base_ip)
+  ip_array = base_ip.split(/\./)
+  BASE_CMC_IP + ".#{ip_array.last}"
+end
+
+#this matches each node of the input node to the output json
+def match_node_to_res(node, i)
+  n = Marshal.load(Marshal.dump(@base_node))
+  puts "new node: '#{n.inspect}'"
+  n[:name] = node['hostname']
+  n[:hostname] = node['hostname']
+  n[:urn] = "#{BASE_URN}#{node['hostname']}"
+  n[:interfaces_attributes].each do |interface|
+    if interface[:role] == "control"
+      interface[:name] = node['hostname'] + ":if0"
+      interface[:ips_attributes].first[:address] = node['control_ip']
+      interface[:mac] = node['control_mac']
+    elsif interface[:role] == "experimental"
+      interface[:name] = node['hostname'] + ":if1"
+      interface[:mac] = calc_mac(node['control_mac'])
+    end
+  end
+  n[:cmc_attributes][:name] = node['hostname'] + ":cm"
+  n[:cmc_attributes][:mac] = calc_cmc_mac(n[:cmc_attributes][:mac], i)
+  n[:cmc_attributes][:ip_attributes][:address] = calc_cmc_ip(node['control_ip'])
+
+  if i >= 2 && i <= 9
+    domain = OUTDOOR_DOMAIN
+    additional_info = Marshal.load(Marshal.dump(@orbit_info))
+  elsif i == 1 || i == 10 || (i >= 14 && i <= 35)
+    domain = OUTDOOR_DOMAIN
+    additional_info = Marshal.load(Marshal.dump(@grid_info))
+  elsif i >= 36 && i <= 40
+    domain = OFFICE_DOMAIN
+    additional_info = Marshal.load(Marshal.dump(@diskless_info))
+  elsif i >= 41 && i <= 49
+    domain = OFFICE_DOMAIN
+    additional_info = Marshal.load(Marshal.dump(@icarus_info))
+  elsif i >= 50 && i <= 85
+    domain = INDOOR_DOMAIN
+    additional_info = Marshal.load(Marshal.dump(@icarus_info)) 
+  else
+    return n
+  end
+  n[:domain] = domain
+  n[:urn] = n[:urn].sub('omf:nitos', domain)
+  n.merge!(additional_info)
+  n
+end
+
+# mac = "09:A2:DA:0D:F1:01"
+# puts mac_pp(mac)
+#
+# exit
+res = []
+json.each do |node|
+  i = node['id']
+  puts "#{i}: '#{node}'"
+  tmp = {}
+  tmp =  match_node_to_res(node, i)
+  puts "result: '#{tmp}'"
+  res << tmp.clone
+end
+
+puts "FINAL: #{res.to_json}"
+
+File.open(OUT_FILE, 'w') { |file| file.write(JSON.pretty_generate(res)) }

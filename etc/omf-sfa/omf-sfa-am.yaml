@@ -1,0 +1,42 @@
+
+omf_sfa_am:
+  # This is your testbed's domain. It will be used in the URNs
+  # of the resources e.g. 'urn:publicid:IDN+domain+type+name'
+  domain: omf:testserver
+  #operation mode for OmfCommon.init (development, production, etc)
+  operationMode: development
+
+  #database info
+  # postgres://user:password@localhost/my_db
+  # sqlite://inventory.db
+  database: sqlite://inventory.db
+
+  endpoints:
+    -
+      type: xmlrpc
+      port: 8001
+      ssl:
+        cert_chain_file: ~/.omf/am.pem
+        private_key_file: ~/.omf/am.pkey
+      trusted_roots: ~/.omf/trusted_roots
+    -
+      type: xmpp
+      user: am_mgr-1.0
+      password: pw
+      server: nitlab.inf.uth.gr 
+      auth:
+        :entity_cert: ~/.omf/am.pem
+        :entity_key: ~/.omf/am.pkey
+        :root_cert_dir: ~/.omf/trusted_roots
+
+  mapping_submodule:
+      require: omf-sfa/am/mapping_submodule
+      constructor: MappingSubmodule
+
+  am_liaison:
+      require: omf-sfa/am/nitos_am_liaison
+      constructor: OMF::SFA::AM::NitosAMLiaison
+
+  am_policies:
+      require: omf-sfa/am/am_policies
+      constructor: OMF::SFA::AM::AMPolicies
