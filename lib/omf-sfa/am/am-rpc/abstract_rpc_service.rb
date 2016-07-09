@@ -24,9 +24,10 @@ module OMF::SFA::AM::RPC
     # This defines a method to declare the service methods and all their
     # parameters.
     #
-    def self.implement(api)
-      @mappings ||= {}
-      api.api_description.each do |m|
+    # static methodoi, kalountai mono ws AbstractService.implement
+    def self.implement(api) # pairnei ws orisma ena am_rpc_api.rb module OMF::SFA::AM::RPC::AMServiceAPI
+      @mappings ||= {} # hash
+      api.api_description.each do |m| # to m einai struct MethodDescription
         wrapper_name = "_wrapper_#{m.method_name}".to_sym
         self.send(:define_method, wrapper_name) do |*args|
           begin

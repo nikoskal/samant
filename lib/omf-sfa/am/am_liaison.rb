@@ -14,11 +14,11 @@ module OMF::SFA::AM
     include OmfCommon::Auth
 
     attr_accessor :comm, :am_manager, :am_scheduler
-    @leases = {}
+    @leases = {} # Hash
 
     def initialize
       EM.next_tick do
-        OmfCommon.comm.on_connected do |comm|
+        OmfCommon.comm.on_connected do |comm|   # Return the communication driver instance
           puts "AMLiaison ready."
         end
       end
@@ -161,9 +161,9 @@ module OMF::SFA::AM
       OmfCommon.comm.subscribe(component.name) do |resource|
         unless resource.error?
 
-          create_timer = EventMachine::Timer.new(lease[:valid_from] - Time.now) do
+          create_timer = EventMachine::Timer.new(lease[:valid_from] - Time.now) do # metraei antistrofa ti diarkeia tou lease
             @leases[lease] = {} unless @leases[lease]
-            @leases[lease] = { component.id => {:start => create_timer} }
+            @leases[lease] = { component.id => {:start => create_timer} } # lease start
 
             #create_resource(resource, lease, :node, {hrn: component.name, uuid: component.uuid})
             create_resource(resource, lease, component)
@@ -177,7 +177,7 @@ module OMF::SFA::AM
 
     def create_resource(resource, lease, component)
       #resource.create(type, hrn: component.name, uuid: component.uuid) do |reply_msg|
-      resource.create(component.resource_type.to_sym, hrn: component.name, uuid: component.uuid) do |reply_msg|
+      resource.create(component.resource_type.to_sym, hrn: component.name, uuid: component.uuid) do |reply_msg| # vazei to lease sti vasi
         if reply_msg.success?
           new_res = reply_msg.resource
 
@@ -185,7 +185,7 @@ module OMF::SFA::AM
             info ">>> Connected to newly created node #{reply_msg[:hrn]}(id: #{reply_msg[:res_id]})"
             # Then later on, we will ask res to release this component.
             #
-            release_resource(resource, new_res, lease, component)
+            release_resource(resource, new_res, lease, component) # arxizei enas timer na trexei me ti diarkeia tou lease
           end
         else
           error ">>> Resource creation failed - #{reply_msg[:reason]}"
@@ -197,7 +197,7 @@ module OMF::SFA::AM
 
       release_timer = EventMachine::Timer.new(lease[:valid_until] - Time.now) do
         #OmfCommon.eventloop.after(lease[:valid_from] - Time.now) do
-        @leases[lease][component.id] = {:end => release_timer}
+        @leases[lease][component.id] = {:end => release_timer} # lease end
         resource.release(new_res) do |reply_msg|
           info "Node #{reply_msg[:res_id]} released"
           @leases[lease].delete(component.id)

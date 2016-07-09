@@ -40,13 +40,13 @@ module OMF::SFA::AM
         raise UnknownResourceException.new "Resource '#{desc.inspect}' is not available or doesn't exist"
       end
 
-      child = parent.clone 
+      child = parent.clone # dimiourgeitai enas klonos tou antikeimenou
 
-      ac = OMF::SFA::Model::Account[resource_descr[:account_id]] #search with id
-      child.account = ac
+      ac = OMF::SFA::Model::Account[resource_descr[:account_id]] # search with id
+      child.account = ac # resource :: account
       child.status = "unknown"
       child.save
-      parent.add_child(child)
+      parent.add_child(child) # fainetai na xrisimopoiei xml gia na apo8ikeuei ta events tou
 
       child
     end
@@ -64,7 +64,7 @@ module OMF::SFA::AM
       else
         leases = OMF::SFA::Model::Lease.where(account_id: account.id, status: status)
       end
-      leases.to_a
+      leases.to_a # to array
     end
 
     # Releases/destroys the given resource
@@ -148,7 +148,7 @@ module OMF::SFA::AM
         lease.save
         parent.save
         component.save
-        true
+        true # epistrefei tin teleutaia timi
       else
         false
       end
@@ -162,11 +162,11 @@ module OMF::SFA::AM
     # @return [Boolean] true if it is available, false if it is not
     #
     def component_available?(component, start_time, end_time)
-      return component.available unless component.exclusive
+      return component.available unless component.exclusive # Resource/Ocomponent
       return false unless component.available
       return true if OMF::SFA::Model::Lease.all.empty?
 
-      parent = component.account == get_nil_account() ? component : component.parent
+      parent = component.account == get_nil_account() ? component : component.parent # Resource/Oresource kai Model/component
 
       leases = OMF::SFA::Model::Lease.where(components: [parent], status: ['active', 'accepted']){((valid_from >= start_time) & (valid_from < end_time)) | ((valid_from <= start_time) & (valid_until > start_time))}
 
@@ -254,13 +254,13 @@ module OMF::SFA::AM
       if t_now >= lease.valid_from # the lease is active - create only the on_lease_end event
         lease.status = 'active'
         lease.save
-        @event_scheduler.in('0.1s', tag: "#{l_uuid}_start") do
+        @event_scheduler.in('0.1s', tag: "#{l_uuid}_start") do # praktika ksekina to twra
           lease = OMF::SFA::Model::Lease.first(uuid: l_uuid)
           break if lease.nil?
           @liaison.on_lease_start(lease)
         end
       else
-        @event_scheduler.at(lease.valid_from, tag: "#{l_uuid}_start") do
+        @event_scheduler.at(lease.valid_from, tag: "#{l_uuid}_start") do # alliws ksekina to opote sou leei
           lease = OMF::SFA::Model::Lease.first(uuid: l_uuid)
           break if lease.nil?
           lease.status = 'active'
@@ -268,7 +268,7 @@ module OMF::SFA::AM
           @liaison.on_lease_start(lease)
         end
       end
-      @event_scheduler.at(lease.valid_until, tag: "#{l_uuid}_end") do
+      @event_scheduler.at(lease.valid_until, tag: "#{l_uuid}_end") do # stamata to tote
         lease = OMF::SFA::Model::Lease.first(uuid: l_uuid) 
         lease.status = 'past'
         lease.save
@@ -285,7 +285,7 @@ module OMF::SFA::AM
 
     def delete_lease_events_from_event_scheduler(lease)
       debug "delete_lease_events_on_event_scheduler: lease: #{lease.inspect}"
-      uuid = lease.uuid
+      uuid = lease.uuid # diagrafei ta leases apo ton event scheduler me vasi to uuid tous
       job_ids = []
       @event_scheduler.jobs.each do |j|
         job_ids << j.id if j.tags.first == "#{uuid}_start" || j.tags.first == "#{uuid}_end"
@@ -299,7 +299,7 @@ module OMF::SFA::AM
       list_all_event_scheduler_jobs
     end
 
-    def list_all_event_scheduler_jobs
+    def list_all_event_scheduler_jobs # debug messages only
       debug "Existing jobs on event scheduler: "
       debug "no jobs in the queue" if @event_scheduler.jobs.empty?
       @event_scheduler.jobs.each do |j|

@@ -62,7 +62,7 @@ module OMF::SFA::Resource
     end
 
     def each_resource(&block)
-      self.contains_resources().each &block
+      self.contains_resources().each &block # h contains_resources einai apo to has n
     end
 
     #def resource_type

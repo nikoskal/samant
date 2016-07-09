@@ -142,7 +142,7 @@ module OMF::SFA::AM
     #
     def update_resources_from_xml(descr_el, clean_state = false, authorizer = {})
       if descr_el.name.downcase == 'rspec'
-        resources = descr_el.children.collect do |el|
+        resources = descr_el.children.collect do |el| # Returns a new NodeSet containing all the children of all the nodes in
           #debug "create_resources_from_xml::EL: #{el.inspect}"
           if el.kind_of?(Nokogiri::XML::Element)
             # ignore any text elements
@@ -152,8 +152,8 @@ module OMF::SFA::AM
         if clean_state
           # Now free any resources owned by this account but not contained in +resources+
           all_resources = Set.new
-          resources.each {|r| r.all_resources(all_resources)}
-          unused = find_all_resources_for_account(get_requester_account(opts), authorizer) - all_resources
+          resources.each {|r| r.all_resources(all_resources)} # vazei ola ta resources (pou perigrafontai) sto set
+          unused = find_all_resources_for_account(get_requester_account(opts), authorizer) - all_resources # vgazei ta resources pou den perigrafontai
           free_resources(unused, authorizer)
         end
         return resources

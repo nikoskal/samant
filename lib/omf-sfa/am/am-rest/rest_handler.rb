@@ -88,6 +88,7 @@ module OMF::SFA::AM::Rest
     end
 
     def call(env)
+      debug "call"
       begin
         req = ::Rack::Request.new(env)
         if req.request_method == 'OPTIONS'
@@ -201,13 +202,14 @@ module OMF::SFA::AM::Rest
 
 
     def find_handler(path, opts)
+      debug "rest handler"
       debug "find_handler: path; '#{path}' opts: #{opts}"
       resource_id = opts[:resource_uri] = path.shift
       opts[:resource] = nil
       if resource_id
         resource = opts[:resource] = find_resource(resource_id)
       end
-      return self if path.empty?
+      return self if path.empty? # auto sumvainei stin apli periptwsi
 
       raise OMF::SFA::AM::Rest::UnknownResourceException.new "Unknown resource '#{resource_id}'." unless resource
       opts[:context] = resource
@@ -283,8 +285,13 @@ module OMF::SFA::AM::Rest
     def populate_opts(req, opts)
       path = req.path_info.split('/').select { |p| !p.empty? }
       opts[:req] = req
-      opts[:format] = req['format'] || 'json'
-      opts[:target] = find_handler(path, opts)
+      if @opts[:semantic] # TODO OPTIMIZE
+        opts[:format] = 'ttl'
+      else
+        opts[:format] = req['format'] || 'json' #json by default
+      end
+      debug "populate opts"
+      opts[:target] = find_handler(path, opts) # gyrnatai o resource_handler
       #opts[:target].inspect
       opts
     end
@@ -297,15 +304,15 @@ module OMF::SFA::AM::Rest
       if body.is_a? Hash
         raise UnsupportedBodyFormatException.new('Send body raw, not as form data')
       end
-      (body = body.string) if body.is_a? StringIO
+      (body = body.string) if body.is_a? StringIO # A node-set is converted to a string by returning the string-value
       if body.is_a? Tempfile
         tmp = body
         body = body.read
         tmp.rewind
       end
-      debug 'PARSE_BODY(ct: ', req.content_type, '): ', body.inspect
+      debug 'PARSE_BODY(ct: ', req.content_type, '): ', body.inspect # req.content_type = application/json, body.inspect = "[ {   \"name\": \"node1\",   \"hostname\": \"node1\", ... "
       unless content_type = req.content_type
-        body.strip!
+        body.strip! # Removes leading and trailing whitespace from <i>str</i>.
         if ['/', '{', '['].include?(body[0])
           content_type = 'application/json'
         else
@@ -325,7 +332,7 @@ module OMF::SFA::AM::Rest
         case content_type
         when 'application/json'
           raise UnsupportedBodyFormatException.new(:json) unless allowed_formats.include?(:json)
-          jb = JSON.parse(body)
+          jb = JSON.parse(body)   # Parse the JSON document _source_ into an array of hashes and return it
           return [_rec_sym_keys(jb), :json]
         when 'text/xml'
           xb = Nokogiri::XML(body)
@@ -348,10 +355,11 @@ module OMF::SFA::AM::Rest
 
 
     def dispatch(req)
+      debug "dispatch"
       opts = {}
       populate_opts(req, opts)
       #puts "OPTS>>>> #{opts.inspect}"
-      method = req.request_method
+      method = req.request_method # GET
       target = opts[:target] #|| self
       resource_uri = opts[:resource_uri]
       case method

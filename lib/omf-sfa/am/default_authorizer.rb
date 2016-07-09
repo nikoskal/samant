@@ -31,7 +31,7 @@ module OMF::SFA::AM
       :can_modify_lease?, # (lease)
       :can_release_lease?, # (lease)
     ].each do |m|
-      define_method(m) do |*args|
+      define_method(m) do |*args| # This block is evaluated using <code>instance_eval</code>
         debug "Check permission '#{m}' (#{@permissions.inspect})"
         unless @permissions[m]
           raise InsufficientPrivilegesException.new
@@ -41,7 +41,7 @@ module OMF::SFA::AM
     end
 
     def initialize(permissions = {})
-      @permissions = permissions
+      @permissions = permissions # Hash
       @account = nil#TODO remove this when we enable authentication on both rest and xmpp
     end
   end

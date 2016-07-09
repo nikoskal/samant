@@ -157,7 +157,7 @@ module OMF::SFA::AM::Rest
             lease.components.each do |lcomp|
               if !lcomp.parent.nil? && lcomp.parent.id == comp.id
                 @am_manager.release_resource(lcomp, authorizer) # release child resoure
-                lease.remove_component(comp) # remove parent resource from lease
+                lease.remove_component(comp) # remove parent resource from lease, methodos pou dimiourgeitai automata apo tin sequel
                 lease.reload
                 if lease.components.empty?
                   @am_manager.release_lease(lease, authorizer)

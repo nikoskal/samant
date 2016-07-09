@@ -11,7 +11,7 @@ class MyFile < Rack::File
   end
 end
 
-use ::Rack::Lint
+use ::Rack::Lint # Rack::Lint validates your application and the requests and responses according to the Rack spec.
 
 map '/slices' do
   require 'omf-sfa/am/am-rest/account_handler'
@@ -22,7 +22,7 @@ end
 map "/resources" do
   require 'omf-sfa/am/am-rest/resource_handler'
   account = opts[:am_mgr].get_default_account()
-  run OMF::SFA::AM::ResourceHandler.new(opts[:am][:manager], opts.merge({:account => account}))
+  run OMF::SFA::AM::ResourceHandler.new(opts[:am][:manager], opts.merge({:account => account})) # nomizw kanei merge 2 Json files
 end
 
 map "/" do

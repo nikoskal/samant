@@ -11,7 +11,7 @@ module OMF::SFA::Model
         Constants.default_component_manager_id
       end
 
-      @@sfa_namespaces = {}
+      @@sfa_namespaces = {} # hashes
       @@sfa_defs = {}
       @@sfa_classes = {}
       @@sfa_class_props = {}

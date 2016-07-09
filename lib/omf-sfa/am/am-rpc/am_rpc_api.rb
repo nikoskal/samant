@@ -1,16 +1,18 @@
 
 module OMF::SFA::ServiceAPI
-  Struct.new("MethodDescription", :rpc_name, :method_name, :opts)
+  Struct.new("MethodDescription", :rpc_name, :method_name, :opts) # dimiourgeis ena Struct (san domi)
 
   # This defines a method to declare the service methods and all their
   # parameters.
-  #
+  # to m einai global metavliti
   def declare(rpc_name, method_name, opts = {}, &block)
-    @@declarations ||= {}
-    m = (@@declarations[self] ||= [])
-    m << Struct::MethodDescription.new(rpc_name.to_sym, method_name.to_sym, opts)
+    @@declarations ||= {} # Hash, adeio
+    m = (@@declarations[self] ||= []) # hasharei ton eauto tou me keno pinaka kai ana8etei sto m
+    #  initialize ena method description struct me dosmena rpc name, method name klp, to_sym kanei "a" -> :a
+    m << Struct::MethodDescription.new(rpc_name.to_sym, method_name.to_sym, opts) # pinakas me structs
   end
 
+  # auti otan kaleitai gurnaei ton pinaka m me ta structs twn methodwn
   def api_description()
     @@declarations ||= {}
     @@declarations[self] || []
@@ -22,6 +24,7 @@ end
 module OMF::SFA::AM::RPC::AMServiceAPI
   extend OMF::SFA::ServiceAPI
 
+  # oles autes oi declare pane kai mpainoun sto m, parea me to hash tous
   declare :GetVersion, :get_version, {
     :short => "",
     :params => {},

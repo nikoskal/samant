@@ -127,7 +127,7 @@ module OMF::SFA::AM::Rest
       @user = user
       @am_manager = am_manager
 
-      if @user.nil?
+      if @user.nil? # an den exw account
         permissions = {
           can_create_account?:   false,
           can_view_account?:     true,
@@ -144,10 +144,10 @@ module OMF::SFA::AM::Rest
           can_release_lease?:    false
         }
         super(permissions)
-      else
+      else # an exw account vres to
         super()
         # @account = am_manager.find_account({name: account}, self) if account
-        @account = OMF::SFA::Model::Account.first({name: account}) if account
+        @account = OMF::SFA::Model::Account.first({name: account}) if account # epistrefei tin prwti emfanisi tou account
         @account = @user.accounts.first if @account.nil?
 
         if @account.closed?
@@ -159,7 +159,7 @@ module OMF::SFA::AM::Rest
           raise OMF::SFA::AM::InsufficientPrivilegesException.new("The user '#{@user.name}' does not belong to the account '#{account}'")
         end
 
-        if @account == am_manager._get_nil_account
+        if @account == am_manager._get_nil_account # an eimai o ADMIN (default account == admin)
           @permissions = {
             can_create_account?:   true,
             can_view_account?:     true,
@@ -175,7 +175,7 @@ module OMF::SFA::AM::Rest
             can_modify_lease?:     true,
             can_release_lease?:    true
           } 
-        else
+        else # an eimai aplos xristis
           @permissions = {
             can_create_account?:   false,
             can_view_account?:     true,

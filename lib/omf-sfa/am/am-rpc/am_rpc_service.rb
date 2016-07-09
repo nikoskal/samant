@@ -24,7 +24,7 @@ module OMF::SFA::AM::RPC
     attr_accessor :authorizer
 
     #implement ServiceAPI
-    implement AMServiceAPI
+    implement AMServiceAPI # dimiourgeitai ena hash tupou "API: map #{m.rpc_name} to #{wrapper_name}"
 
 
     def get_version(options = {})
@@ -360,7 +360,7 @@ module OMF::SFA::AM::RPC
       super
       @manager = opts[:manager]
       @liaison = opts[:liaison]
-      @return_struct = {
+      @return_struct = { # hash
         :code => {
           :geni_code => ""
         },

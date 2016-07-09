@@ -55,7 +55,7 @@ module OMF::SFA::AM::Rest
 
     def call(env)
       req = ::Rack::Request.new(env)
-      method = req.request_method
+      method = req.request_method # epikoinwnei me to rack interface kai vlepei poia methodos exei zhththei (px GET)
       # sid = nil
       path_info = req.path_info
       #puts "REQUEST(#{self.object_id}): #{path_info}"

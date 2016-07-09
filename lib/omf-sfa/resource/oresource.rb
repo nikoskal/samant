@@ -31,7 +31,7 @@ module OMF::SFA::Resource
   #
   class OResource
     include OMF::Common::Loggable
-    extend OMF::Common::Loggable
+    extend OMF::Common::Loggable # debug
 
     include DataMapper::Resource
     include DataMapper::Validations
@@ -41,7 +41,7 @@ module OMF::SFA::Resource
 
     @@oprops = {}
 
-    # managing dm object
+    # managing dm object, dm = datamapper
     property :id,   Serial
     property :type, Discriminator
 
@@ -282,9 +282,9 @@ module OMF::SFA::Resource
     def oproperty_get(pname)
       #puts "OPROPERTY_GET: pname:'#{pname}'"
       pname = pname.to_sym
-      return self.name if pname == :name
+      return self.name if pname == :name # relational property
 
-      prop = self.oproperties.first(:name => pname)
+      prop = self.oproperties.first(:name => pname) # gurnaei to property me to sugkekrimeno name (px "valid_until")
       prop.nil? ? nil : prop.value
     end
     alias_method :[], :oproperty_get

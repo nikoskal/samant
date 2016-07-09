@@ -153,7 +153,7 @@ module OMF::SFA
             resource = manager.find_resource({:uuid => uuid}, authorizer) # wouldn't know what to create
           elsif comp_id_attr = resource_el.attributes['component_id']
             comp_id = comp_id_attr.value
-            comp_gurn = OMF::SFA::Resource::GURN.parse(comp_id)
+            comp_gurn = OMF::SFA::Resource::GURN.parse(comp_id) # parsarei katallila to global urn
             #if uuid = comp_gurn.uuid
             #  resource_descr = {:uuid => uuid}
             #else
