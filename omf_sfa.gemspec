@@ -19,7 +19,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   # specify any dependencies here; for example:
-  s.add_development_dependency "minitest", "~> 4.3.3"
+  s.add_development_dependency "minitest", "~> 5.1" # was 4.3.3
   s.add_runtime_dependency "nokogiri", "~> 1.5.6"
   s.add_runtime_dependency "erector", "~> 0.8.3"
   s.add_runtime_dependency "rack", "~> 1.5.2"
@@ -30,11 +30,19 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "uuid", "~> 2.3.5"
   s.add_runtime_dependency "json", "~> 1.7.7"
   s.add_runtime_dependency "blather", "~> 1.0.0"
+  s.add_runtime_dependency "rdf"
+  s.add_runtime_dependency "spira", "~> 2.0.0"
+  s.add_runtime_dependency "rdf-turtle"
+  s.add_runtime_dependency "rdf-json"
+  s.add_runtime_dependency "sparql", "~> 2.0.0"
+  s.add_runtime_dependency "sparql-client"
+  s.add_runtime_dependency "rdf-vocab"
+  s.add_runtime_dependency "builder", "~> 3.2"
 #
   s.add_runtime_dependency "equivalent-xml", "~> 0.2.9"
   s.add_runtime_dependency "rspec", "~> 2.11.0"
-  s.add_runtime_dependency "activesupport", "~> 3.2.8"
-  s.add_runtime_dependency "rack-rpc", "~> 0.0.12"
+  s.add_runtime_dependency "activesupport", "~> 4.2.6" # was 3.2.8
+  s.add_runtime_dependency "rack-rpc"#, "~> 0.0.12"
   s.add_runtime_dependency "data_mapper", "~> 1.2.0"
   s.add_runtime_dependency "bluecloth", "~> 2.2.0"
   s.add_runtime_dependency "omf_common", "~> 6.1.12"
