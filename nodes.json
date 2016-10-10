@@ -1,0 +1,53 @@
+{
+  "name": "node001",
+  "hostname": "node001",
+  "urn": "urn:publicid:IDN+omf:nitos.outdoor+node+node001",
+  "interfaces_attributes": [
+    {
+      "name": "node001:if0",
+      "role": "control",
+      "mac": "00:03:1D:0D:90:DE",
+      "ips_attributes": [
+        {
+          "address": "10.0.1.1",
+          "netmask": "255.255.255.0",
+          "ip_type": "ipv4"
+        }
+      ]
+    },
+    {
+      "name": "node001:if1",
+      "role": "experimental",
+      "mac": "00:03:1D:0D:90:DF"
+    }
+  ],
+  "cmc_attributes": {
+    "name": "node001:cm",
+    "mac": "09:A2:DA:0D:F0:01",
+    "ip_attributes": {
+      "address": "10.1.0.1",
+      "netmask": "255.255.255.0",
+      "ip_type": "ipv4"
+    }
+  },
+  "domain": "omf:nitos.outdoor",
+  "hardware_type": "PC-Grid",
+  "gateway": "nitlab.inf.uth.gr",
+  "cpus_attributes": [
+    {
+      "cpu_type": "Intel(R) Core(TM)2 Duo CPU P8400 @ 2.26GHz",
+      "cores": 2,
+      "threads": 2,
+      "cache_l1": "32 KB",
+      "cache_l2": "3 MB"
+    }
+  ],
+  "ram": "1.8905 GB",
+  "ram_type": "DIMM Synchronous",
+  "hd_capacity": "59.6263 GB",
+  "location_attributes": {
+    "latitude": "39.360814",
+    "longitude": "22.950075",
+    "altitude": "4"
+  }
+}

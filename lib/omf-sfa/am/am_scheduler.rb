@@ -29,7 +29,7 @@ module OMF::SFA::AM
     def create_child_resource(resource_descr, type_to_create)
       debug "create_child_resource: resource_descr:'#{resource_descr}' type_to_create:'#{type_to_create}'"
 
-      desc = resource_descr.dup
+      desc = resource_descr.dup # object duplicate
       desc[:account_id] = get_nil_account.id
 
       type = type_to_create.classify
@@ -46,6 +46,10 @@ module OMF::SFA::AM
       child.account = ac # resource :: account
       child.status = "unknown"
       child.save
+
+      debug "PATERAS " + parent.inspect
+      debug "PAIDI " + child.inspect
+
       parent.add_child(child) # fainetai na xrisimopoiei xml gia na apo8ikeuei ta events tou
 
       child

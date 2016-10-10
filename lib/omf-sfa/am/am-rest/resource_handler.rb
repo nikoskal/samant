@@ -57,7 +57,7 @@ module OMF::SFA::AM::Rest
         descr = {}
         descr.merge!(resource_params) unless resource_params.empty?
         opts[:path] = opts[:req].path.split('/')[0 .. -2].join('/')
-        descr[:account_id] = @am_manager.get_scheduler.get_nil_account.id if eval("OMF::SFA::Model::#{resource_type}").can_be_managed?
+        descr[:account_id] = @am_manager.get_scheduler.get_nil_account.id if eval("OMF::SFA::Model::#{resource_type}").can_be_managed? && !@opts[:semantic]
         if descr[:name].nil? && descr[:uuid].nil?
           resource =  @am_manager.find_all_resources(descr, resource_type, authenticator, @opts[:semantic])
         else
@@ -102,7 +102,7 @@ module OMF::SFA::AM::Rest
     def on_delete(resource_uri, opts)
       debug "on_delete: #{resource_uri}"
       delete_resource(resource_uri, opts)
-      show_resource(nil, opts)
+      show_resource(nil, opts) # epistrefei ena sketo "OK"
     end
 
 
@@ -165,7 +165,7 @@ module OMF::SFA::AM::Rest
         when 'xml'
           show_resources_xml(resource, path, opts)
         when 'ttl'
-          show_resources_ttl(resource)
+          show_resources_ttl(resource, opts)
         else
           show_resources_json(resource, path, opts)
       end
@@ -185,9 +185,39 @@ module OMF::SFA::AM::Rest
       ['application/json', JSON.pretty_generate({:resource_response => res}, :for_rest => true)]
     end
 
-    def show_resources_ttl(resource)
+    def show_resources_ttl(resource, opts)
       debug "show_resources_ttl"
-      ['application/json', Semantic::Resource.to_turtle(resource)]
+      ['application/json', resource_to_turtle(resource, opts)]
+    end
+
+    def resource_to_turtle(query, opts)
+      if query.nil?
+        return ::JSON.pretty_generate({:response => "OK", :about => opts[:req].path}) # KARATIA MEGALI 2
+      end
+      sparql = SPARQL::Client.new($repository)
+      res = Array.new
+      prev_output = ""
+      if query.kind_of?(Array)
+        qu_ary = query
+      else
+        qu_ary = [query]
+      end
+      qu_ary.each { |query|
+        query.each_statement do |s,p,o|
+          tmp_query = sparql.construct([s, :p, :o]).where([s, :p, :o])
+          output = RDF::JSON::Writer.buffer do |writer|
+            writer << tmp_query #$repository
+          end
+          unless prev_output == output # KARATIA MEGALI
+            res << ::JSON.parse(output) # apo JSON se hash, gia na ginei swsto merge
+            prev_output = output
+          end
+        end
+      }
+      raise UnknownResourceException, "No resources matching the request." if res.empty?
+      #debug opts[:req].path
+      res << {:about => opts[:req].path}
+      ::JSON.pretty_generate(res, :for_rest => true) # apo merged hash se JSON
     end
 
     def resource_to_json(resource, path, opts, already_described = {})
@@ -283,7 +313,7 @@ module OMF::SFA::AM::Rest
           desc[:uuid] = c[:uuid] unless c[:uuid].nil?
           desc[:name] = c[:name] unless c[:name].nil?
           if k = OMF::SFA::Model::Resource.first(desc)
-            components << k
+            components << k #vres to component me to tade uuid h name (analoga ti exei do8ei) kai valto ston pinaka components
           end
         end 
 
@@ -405,6 +435,7 @@ module OMF::SFA::AM::Rest
     # @raise [UnknownResourceException] if no resource can be created
     #
     def release_resource(resource_descr, type_to_release, authorizer)
+
       if type_to_release == "Lease" #Lease is a unigue case, needs special treatment
         if resource = OMF::SFA::Model::Lease.first(resource_descr)
           @am_manager.release_lease(resource, authorizer)
@@ -412,15 +443,30 @@ module OMF::SFA::AM::Rest
           raise OMF::SFA::AM::Rest::UnknownResourceException.new "Unknown Lease with descr'#{resource_descr}'."
         end
       else
-        authorizer.can_release_resource?(resource_descr)
-        if resource = eval("OMF::SFA::Model::#{type_to_release}").first(resource_descr)
-          if type_to_release == 'Account'
-            @am_manager.liaison.close_account(resource)
-          end
+
+        # EXW PEIRAKSEI ####
+
+        if @opts[:semantic]
+          debug "semantic delete"
+          #id = resource_descr[:name]
+          resource = eval("Semantic::#{type_to_release}").for(resource_descr[:name])
+          debug resource.inspect
           resource.destroy
+
+          ##############
         else
-          raise OMF::SFA::AM::Rest::UnknownResourceException.new "Unknown resource with descr'#{resource_descr}'."
+
+          authorizer.can_release_resource?(resource_descr)
+          if resource = eval("OMF::SFA::Model::#{type_to_release}").first(resource_descr)
+            if type_to_release == 'Account'
+              @am_manager.liaison.close_account(resource)
+            end
+            resource.destroy
+          else
+            raise OMF::SFA::AM::Rest::UnknownResourceException.new "Unknown resource with descr'#{resource_descr}'."
+          end
         end
+
       end
       resource
     end

@@ -10,7 +10,7 @@ module Semantic
 
   ##### CLASSES #####
 
-  class Component < Spira::Base
+  class OmnComponent < Spira::Base
     configure :base_uri => OmnComponent
     type RDF::URI.new('http://open-multinet.info/ontology/omn-component#')
 

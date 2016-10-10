@@ -193,6 +193,7 @@ module OMF::SFA::AM::Rest
           }
         end
       end
+      debug "PERMMMMIIIISSSIIIOOOONNNNSS " + @permissions.inspect
     end
 
   end # class

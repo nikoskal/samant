@@ -242,8 +242,10 @@ module OMF::SFA::AM
     # @raise [InsufficientPrivilegesException] if permission is not granted
     #
     def find_lease(lease_descr, authorizer)
+      debug "find lease:  '#{lease_descr.inspect}'"
       unless lease = OMF::SFA::Model::Lease.first(lease_descr)
-        raise UnavailableResourceException.new "Unknown lease '#{lease_descr.inspect}'"
+        #debug "edw eimai" + lease.inspect
+        raise UnavailableResourceException.new "Unknown lease '#{lease_descr.inspect}'" # an to lease pou dimiourgeis den uparxei gyrnaei auto
       end
       raise InsufficientPrivilegesException unless authorizer.can_view_lease?(lease) # den kserw pou einai
       lease
@@ -295,6 +297,10 @@ module OMF::SFA::AM
           nil
         end
       end.compact
+    end
+
+    def find_all_samant_leases(account = nil, status = ['pending', 'accepted', 'active', 'past', 'cancelled'], authorizer)
+
     end
 
     # Modify lease described by +lease_descr+ hash
@@ -365,7 +371,7 @@ module OMF::SFA::AM
     def find_resource(resource_descr, resource_type, authorizer, semantic = false) # h perigrafi tou dinetai eite se hash eite se model resource
       debug "find_resource: descr: '#{resource_descr.inspect}'"
       debug resource_type # px Location
-      debug "semantic = " + semantic
+      #debug "semantic = " + semantic
       if resource_descr.kind_of? OMF::SFA::Model::Resource
         resource = resource_descr # trivial?
       elsif resource_descr.kind_of? Hash
@@ -540,6 +546,10 @@ module OMF::SFA::AM
           nil
         end
       end.compact
+    end
+
+    def find_all_samant_components_for_account(account = _get_nil_account, authorizer)
+
     end
 
     # Find all components

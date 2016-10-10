@@ -13,7 +13,7 @@ module Semantic
 
   ##### CLASSES #####
 
-  class Resource < Spira::Base
+  class OmnResource < Spira::Base
     configure :base_uri => OmnResource
     type RDF::URI.new('http://open-multinet.info/ontology/omn-resource#')
 
@@ -55,30 +55,6 @@ module Semantic
     property :type, :predicate => OmnResource.type, :type => String
 
     # validates :interfaceOf, :type => :NetworkObject # TODO validations?
-
-    def self.to_turtle(query)
-      sparql = SPARQL::Client.new($repository)
-      res = Array.new
-      prev_output = ""
-      if query.kind_of?(Array)
-        qu_ary = query
-      else
-        qu_ary = [query]
-      end
-      qu_ary.each { |query|
-        query.each_statement do |s,p,o|
-          tmp_query = sparql.construct([s, :p, :o]).where([s, :p, :o])
-          output = RDF::JSON::Writer.buffer do |writer|
-            writer << tmp_query #$repository
-          end
-          unless prev_output == output # KARATIA MEGALI
-            res << ::JSON.parse(output) # apo JSON se hash, gia na ginei swsto merge
-            prev_output = output
-          end
-        end
-      }
-      ::JSON.pretty_generate(res) # apo merged hash se JSON
-    end
 
   end
 

@@ -62,6 +62,7 @@ module OMF::SFA::AM::RPC
 
     def list_resources(credentials, options)
       debug 'ListResources: Options: ', options.inspect
+      debug 'ListResources: Credentials: ', credentials.inspect
 
       only_available = options["geni_available"]
       compressed = options["geni_compressed"]
@@ -82,6 +83,7 @@ module OMF::SFA::AM::RPC
         return @return_struct
       end
 
+      debug "Rack Request " + @request.inspect
       authorizer = OMF::SFA::AM::RPC::AMAuthorizer.create_for_sfa_request(slice_urn, credentials, @request, @manager)
 
       if slice_urn

@@ -16,7 +16,7 @@ Sequel.migration do
   end
 
   down do
-    drop_table(:usrp_usb_devices)
+    drop_table(:usrp_ethernet_devices)
     drop_column :interfaces, :usrp_ethernet_device_id
   end
 end

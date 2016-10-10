@@ -1,0 +1,12 @@
+{
+	"name":"lease7",
+	"valid_from": "2016-09-29 13:41:00 +0300",
+	"valid_until": "2016-09-30 13:41:00 +0300",
+	"account": "2",
+	"components": [ 
+		{
+			"name":"node001"
+		}
+	]
+}
+

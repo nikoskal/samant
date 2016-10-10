@@ -16,17 +16,17 @@ omf_sfa_am:
       type: xmlrpc
       port: 8001
       ssl:
-        cert_chain_file: ~/.omf/am.pem
-        private_key_file: ~/.omf/am.pkey
+        cert_chain_file: ~/omf_sfa/am.pem
+        private_key_file: ~/omf_sfa/am.pkey
       trusted_roots: ~/.omf/trusted_roots
     -
       type: xmpp
       user: am_mgr-1.0
       password: pw
-      server: 10.0.0.200 
+      server: nitlab.inf.uth.gr
       auth:
-        :entity_cert: ~/.omf/am.pem
-        :entity_key: ~/.omf/am.pkey
+        :entity_cert: ~/omf_sfa/am.pem
+        :entity_key: ~/omf_sfa/am.pkey
         :root_cert_dir: ~/.omf/trusted_roots
 
   mapping_submodule:
