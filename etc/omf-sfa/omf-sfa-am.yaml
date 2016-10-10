@@ -2,7 +2,7 @@
 omf_sfa_am:
   # This is your testbed's domain. It will be used in the URNs
   # of the resources e.g. 'urn:publicid:IDN+domain+type+name'
-  domain: omf:testserver
+  domain: omf:netmode
   #operation mode for OmfCommon.init (development, production, etc)
   operationMode: development
 
@@ -23,7 +23,7 @@ omf_sfa_am:
       type: xmpp
       user: am_mgr-1.0
       password: pw
-      server: nitlab.inf.uth.gr 
+      server: 10.0.0.200 
       auth:
         :entity_cert: ~/.omf/am.pem
         :entity_key: ~/.omf/am.pkey
