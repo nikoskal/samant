@@ -34,7 +34,8 @@ module OMF::SFA::AM::RPC::V3
     def get_version(options = {})
       debug "GetVersion"
 
-      config = YAML.load_file(File.dirname(__FILE__) + '/../../../../../etc/omf-sfa/getVersion_ext_v3.yaml')
+      # config = YAML.load_file(File.dirname(__FILE__) + '/../../../../../etc/omf-sfa/getVersion_ext_v3.yaml')
+      config = YAML.load_file(File.dirname(__FILE__) + '/Users/nikosk/omf_sfa_clean/etc/omf-sfa/getVersion_ext_v3.yaml')
 
       @return_struct[:geni_api] = 3
       @return_struct[:code][:geni_code] = 0
@@ -70,6 +71,7 @@ module OMF::SFA::AM::RPC::V3
     end
 
     def list_resources(credentials, options)
+      puts "........list_resources......"
       debug 'ListResources: Options: ', options.inspect
       
       only_available = options["geni_available"]

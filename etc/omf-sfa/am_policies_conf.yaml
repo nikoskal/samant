@@ -14,7 +14,7 @@ policies:
     timeslot_size: 30
     policies_per_domain:
       -
-        domain: omf:testserver
+        domain: omf:netmode
         quota:
             max_minutes:   240
             max_resources: 5
@@ -30,7 +30,7 @@ policies:
             max_resources: -1
     policies_per_urn:
       -
-        urn: urn:publicid:IDN+omf:testserver+account+ardadouk
+        urn: urn:publicid:IDN+omf:netmode+account+ardadouk
         quota:
             max_minutes:   240
             max_resources: 10

@@ -28,6 +28,9 @@ module OMF::SFA::AM
 
 
     def self.rpc_config
+      puts "@@@@@@@@@@skata1 "+@@rpc.to_s
+
+
       @@rpc
     end
 
@@ -180,6 +183,7 @@ module OMF::SFA::AM
 
       # Thin::Logging.debug = false
       require 'omf_common/thin/runner'
+
       OMF::Common::Thin::Runner.new(ARGV, opts).run!
     end
 

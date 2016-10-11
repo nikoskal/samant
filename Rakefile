@@ -54,3 +54,5 @@ namespace :db do
     puts "done!"
   end
 end
+
+task default: %w[test]

@@ -40,6 +40,9 @@ module OMF::SFA::AM::RPC
     def self.create_for_sfa_request(account_urn, credentials, request, am_manager)
 
       begin
+
+        puts "@@@ request peer_cert" +request.to_s
+
         raise "Missing peer cert" unless cert_s = request.env['rack.peer_cert']
         peer = OMF::SFA::AM::UserCredential.unmarshall(cert_s)
       end

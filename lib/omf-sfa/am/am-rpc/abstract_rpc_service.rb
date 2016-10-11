@@ -33,7 +33,7 @@ module OMF::SFA::AM::RPC
             self.class.hooks[:before].each do |command|
               command.call(self) if command.callable?(m.method_name)
             end
-
+            puts "@@@@ args "+ args.to_s
             out = self.send(m.method_name, *args)
 
             self.class.hooks[:after].each do |command|

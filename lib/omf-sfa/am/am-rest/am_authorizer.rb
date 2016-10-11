@@ -31,8 +31,17 @@ module OMF::SFA::AM::Rest
       if authenticated
         raise OMF::SFA::AM::InsufficientPrivilegesException.new("Missing peer cert") unless certificate
         peer = OMF::SFA::AM::UserCredential.unmarshall(certificate)
-        
-        debug "Requester: #{peer.subject} :: #{peer.user_urn}"
+        puts "skata 11111111"
+        puts  "certificate:"+ peer.to_s
+
+        debug "debug Requester: #{peer.subject} :: #{peer.user_urn}"
+        puts  "peer.subject: #{peer.subject}"
+        puts "urn: #{peer.user_urn}"
+        puts "before uuid:  #{peer.user_uuid}"
+
+
+
+        puts "after uuid:  #{peer.user_uuid}"
 
         unless peer.valid_at?
           OMF::SFA::AM::InsufficientPrivilegesException.new "The certificate has expired or not valid yet. Check the dates."
@@ -44,8 +53,13 @@ module OMF::SFA::AM::Rest
         raise OMF::SFA::AM::InsufficientPrivilegesException.new "URN and UUID are missing." if user_descr.empty?
 
         begin
+          # user_list = am_manager
           user = am_manager.find_user(user_descr)
         rescue OMF::SFA::AM::UnavailableResourceException
+
+
+
+
           raise OMF::SFA::AM::InsufficientPrivilegesException.new "User: '#{user_descr}' does not exist"
         end
 

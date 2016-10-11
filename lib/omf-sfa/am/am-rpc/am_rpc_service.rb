@@ -62,11 +62,15 @@ module OMF::SFA::AM::RPC
 
     def list_resources(credentials, options)
       debug 'ListResources: Options: ', options.inspect
+      puts "%%%%%% inside list resources "
 
       only_available = options["geni_available"]
       compressed = options["geni_compressed"]
       slice_urn = options["geni_slice_urn"]
       rspec_version = options["geni_rspec_version"]
+      puts "skata1 rspec_version:" +rspec_version.to_s
+      puts "skata2 slice_urn:" +slice_urn.to_s
+
 
       if rspec_version.nil?
         @return_struct[:code][:geni_code] = 1 # Bad Arguments
@@ -81,6 +85,10 @@ module OMF::SFA::AM::RPC
         @return_struct[:value] = ''
         return @return_struct
       end
+      puts "skata3 authorizer:" +credentials.to_s
+      # puts "skata4 request:" + request.env['rack.peer_cert']
+
+
 
       authorizer = OMF::SFA::AM::RPC::AMAuthorizer.create_for_sfa_request(slice_urn, credentials, @request, @manager)
 

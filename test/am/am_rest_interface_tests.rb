@@ -10,14 +10,16 @@ require 'omf_common/load_yaml'
 
 db = Sequel.sqlite # In Memory database
 Sequel.extension :migration
-Sequel::Migrator.run(db, "./migrations") # Migrating to latest
+puts "my dir::::::"+Dir.pwd
+# Sequel::Migrator.run(db, "./migrations") # Migrating to latest
+Sequel::Migrator.run(db, "/Users/nikosk/omf_sfa_clean/migrations") # Migrating to latest
 require 'omf-sfa/models'
 
 OMF::Common::Loggable.init_log('am_manager', { :searchPath => File.join(File.dirname(__FILE__), 'am_manager') })
 ::Log4r::Logger.global.level = ::Log4r::OFF
 
 # Must use this class as the base class for your tests
-class AMRestInterface < MiniTest::Test
+class AMRestInterface < Minitest::Unit::TestCase
   def run(*args, &block)
     result = nil
     Sequel::Model.db.transaction(:rollback=>:always, :auto_savepoint=>true){result = super}
