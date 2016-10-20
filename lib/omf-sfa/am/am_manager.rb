@@ -149,10 +149,11 @@ module OMF::SFA::AM
         account = find_account(account_descr, authorizer)
       end
       raise InsufficientPrivilegesException unless authorizer.can_renew_account?(account, expiration_time)
-      
+      debug " new expiration time = " + expiration_time.to_s
       account.open if account.closed?
       account.valid_until = expiration_time
       account.save
+      debug " new valid until = " + account.valid_until.to_s
       # Ask the corresponding RC to create/re-open an account
       @liaison.create_account(account)
 
@@ -300,7 +301,7 @@ module OMF::SFA::AM
     end
 
     def find_all_samant_leases(account = nil, status = ['pending', 'accepted', 'active', 'past', 'cancelled'], authorizer)
-
+      debug "find_all_samant_leases: account: #{account.inspect} status: #{status}"
     end
 
     # Modify lease described by +lease_descr+ hash

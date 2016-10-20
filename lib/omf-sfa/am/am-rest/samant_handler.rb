@@ -57,8 +57,9 @@ module OMF::SFA::AM::Rest
           comps.delete_if {|c| !c.available?}
         end
         resources.concat(comps)
+      end
+
     end
 
   end
-
 end

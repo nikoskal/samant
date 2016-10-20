@@ -21,22 +21,22 @@ module Semantic
 
   end
 
-  class Cpu < Component
+  class Cpu < OmnComponent
     configure :base_uri => OmnComponent.CPU
     type RDF::URI.new('http://open-multinet.info/ontology/omn-component#CPU')
   end
 
-  class MemoryComponent < Component
+  class MemoryComponent < OmnComponent
     configure :base_uri => OmnComponent.MemoryComponent
     type RDF::URI.new('http://open-multinet.info/ontology/omn-component#MemoryComponent')
   end
 
-  class ProcessingComponent < Component
+  class ProcessingComponent < OmnComponent
     configure :base_uri => OmnComponent.ProcessingComponent
     type RDF::URI.new('http://open-multinet.info/ontology/omn-component#ProcessingComponent')
   end
 
-  class StorageComponent < Component
+  class StorageComponent < OmnComponent
     configure :base_uri => OmnComponent.StorageComponent
     type RDF::URI.new('http://open-multinet.info/ontology/omn-component#StorageComponent')
   end

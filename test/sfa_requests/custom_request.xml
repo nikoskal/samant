@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <rspec type="request" xmlns="http://www.geni.net/resources/rspec/3" xmlns:ol="http://nitlab.inf.uth.gr/schema/sfa/rspec/1" xmlns:omf="http://schema.mytestbed.net/sfa/rspec/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.geni.net/resources/rspec/3 http://www.geni.net/resources/rspec/3/request.xsd http://nitlab.inf.uth.gr/schema/sfa/rspec/1 http://nitlab.inf.uth.gr/schema/sfa/rspec/1/request-reservation.xsd">
-  <ol:lease client_id="l1" valid_from="2016-01-08T19:00:00Z" valid_until="2017-01-08T20:00:00Z"/>
+  <ol:lease client_id="l1" valid_from="2010-01-08T19:00:00Z" valid_until="2016-11-08T20:00:00Z"/>
   <node component_id="urn:publicid:IDN+omf:nitos.outdoor+node+node001" component_manager_id="urn:publicid:IDN+omf:netmode+authority+cm" component_name="node1" exclusive="true" client_id="my_node">
     <interface component_id="urn:publicid:IDN+omf:netmode+interface+node001:if0" component_name="node001:if0">
       <ip address="10.0.0.1"/>

@@ -7,60 +7,48 @@ require 'sparql/client'
 module Semantic
   # Preload ontology
 
+  # exw allaksei Resource se OResource
+
   OmnResource = RDF::Vocabulary.new("http://open-multinet.info/ontology/omn-resource#")
 
   # Built in vocabs: OWL, RDF, RDFS
 
   ##### CLASSES #####
 
-  class OmnResource < Spira::Base
+  class OResource < Spira::Base
     configure :base_uri => OmnResource
     type RDF::URI.new('http://open-multinet.info/ontology/omn-resource#')
 
     # Object Properties
 
-    has_many :interfaces, :predicate => OmnResource.hasInterface, :type => :Interface
-    has_many :ips, :predicate => OmnResource.hasIPAddress, :type => :NetworkObject
-    has_many :sinks, :predicate => OmnResource.hasSink, :type => :Interface
-    has_many :sources, :predicate => OmnResource.hasSource, :type => :Interface
-    has_many :properties, :predicate => OmnResource.hasProperty, :type => :Link
-    has_many :requires, :predicate => OmnResource.requires, :type => :NetworkObject
-    property :interfaceOf, :predicate => OmnResource.isInterfaceOf, :type => :NetworkObject # TODO how to implement group ranges? / multitypes?
-    property :ipOf,  :predicate => OmnResource.isIPAddressOf, :type => :NetworkObject
-    property :location, :predicate => OmnResource.hasLocation, :type => :Location
-    property :sinkOf, :predicate => OmnResource.isSink, :type => :Link
-    property :sourceOf, :predicate => OmnResource.isSource, :type => :Link
-    property :sliverType, :predicate => OmnResource.hasSliverType, :type => :SliverType
-    property :propertyOf, :predicate => OmnResource.isPropertyOf, :type => :LinkProperty
-    property :requiredBy, :predicate => OmnResource.requiredBy, :type => :NetworkObject
-    property :hardwareType, :predicate => OmnResource.hasHardwareType, :type => :HardwareType # @omn-domain-pc TODO implementation
-    property :hardwareTypeOf, :predicate => OmnResource.isHardwareTypeOf, :type => :NetworkObject
-
-    property :managedBy, :predicate => OmnResource.managedBy, :type => :Account # TODO insert to OMN ONTOLOGY
+    has_many :hasInterface, :predicate => OmnResource.hasInterface, :type => :Interface
+    property :hasLocation, :predicate => OmnResource.hasLocation, :type => :Location
+    property :hasHardwareType, :predicate => OmnResource.hasHardwareType, :type => :HardwareType # @omn-domain-pc TODO implementation
+    property :isHardwareTypeOf, :predicate => OmnResource.isHardwareTypeOf, :type => :NetworkObject
 
     # Data Properties
 
-    property :address, :predicate => OmnResource.address, :type => String
-    property :clientId, :predicate => OmnResource.clientId, :type => String
-    property :available, :predicate => OmnResource.isAvailable, :type => Boolean
-    property :exclusive, :predicate => OmnResource.isExclusive, :type => Boolean
-    property :jfedX, :predicate => OmnResource.jfedX, :type => String
-    property :jfedY, :predicate => OmnResource.jfedY, :type => String
-    property :x, :predicate => OmnResource.x, :type => Decimal
-    property :y, :predicate => OmnResource.y, :type => Decimal
-    property :z, :predicate => OmnResource.z, :type => Decimal
-    property :macAddress, :predicate => OmnResource.macAddress, :type => String
-    property :netmask, :predicate => OmnResource.netmask, :type => String
-    property :port, :predicate => OmnResource.port, :type => Integer
-    property :type, :predicate => OmnResource.type, :type => String
+    property :isExclusive, :predicate => OmnResource.isExclusive, :type => Boolean
 
     # validates :interfaceOf, :type => :NetworkObject # TODO validations?
 
   end
 
-  class NetworkObject < Resource
+  class NetworkObject < OResource
     configure :base_uri => OmnResource.NetworkObject
     type RDF::URI.new('http://open-multinet.info/ontology/omn-resource#NetworkObject')
+
+    # Object Properties
+
+    has_many :hasIPAddress, :predicate => OmnResource.hasIPAddress, :type => :IPAddress
+    property :hasSliverType, :predicate => OmnResource.hasSliverType, :type => :SliverType
+    property :requiredBy, :predicate => OmnResource.requiredBy, :type => :NetworkObject
+    has_many :requires, :predicate => OmnResource.requires, :type => :NetworkObject
+
+    # Data Properties
+
+    property :isAvailable, :predicate => OmnResource.isAvailable, :type => Boolean
+
   end
 
   class Node < NetworkObject
@@ -76,11 +64,33 @@ module Semantic
   class Interface < NetworkObject
     configure :base_uri => OmnResource.Interface
     type RDF::URI.new('http://open-multinet.info/ontology/omn-resource#Interface')
+
+    # Object Properties
+
+    property :isInterfaceOf, :predicate => OmnResource.isInterfaceOf, :type => :NetworkObject # TODO how to implement group ranges? / multitypes?
+    property :isSink, :predicate => OmnResource.isSink, :type => :Link
+    property :isSource, :predicate => OmnResource.isSource, :type => :Link
+
+    # Data Properties
+
+    property :clientId, :predicate => OmnResource.clientId, :type => String
+    property :macAddress, :predicate => OmnResource.macAddress, :type => String
+    property :port, :predicate => OmnResource.port, :type => Integer
+
   end
 
-  class Location < Resource
+  class Location < Spira::Base
     configure :base_uri => OmnResource.Location
     type RDF::URI.new('http://open-multinet.info/ontology/omn-resource#Location')
+
+    # Data Properties
+
+    property :jfedX, :predicate => OmnResource.jfedX, :type => String
+    property :jfedY, :predicate => OmnResource.jfedY, :type => String
+    property :x, :predicate => OmnResource.x, :type => Decimal
+    property :y, :predicate => OmnResource.y, :type => Decimal
+    property :z, :predicate => OmnResource.z, :type => Decimal
+
   end
 
   class Cloud < NetworkObject
@@ -93,19 +103,43 @@ module Semantic
     type RDF::URI.new('http://open-multinet.info/ontology/omn-resource#Hop')
   end
 
-  class IPAddress < Resource
+  class IPAddress < OResource
     configure :base_uri => OmnResource.IPAddress
     type RDF::URI.new('http://open-multinet.info/ontology/omn-resource#IPAddress')
+
+    # Object Properties
+
+    property :isIPAddressOf,  :predicate => OmnResource.isIPAddressOf, :type => :NetworkObject
+
+    # Data Properties
+
+    property :address, :predicate => OmnResource.address, :type => String
+    property :netmask, :predicate => OmnResource.netmask, :type => String
+    property :type, :predicate => OmnResource.type, :type => String
+
+
   end
 
-  class Link < Resource
+  class Link < OResource
     configure :base_uri => OmnResource.Link
     type RDF::URI.new('http://open-multinet.info/ontology/omn-resource#Link')
+
+    # Object Properties
+
+    has_many :hasSink, :predicate => OmnResource.hasSink, :type => :Interface
+    has_many :hasSource, :predicate => OmnResource.hasSource, :type => :Interface
+    property :isPropertyOf, :predicate => OmnResource.isPropertyOf, :type => :LinkProperty
+
   end
 
-  class LinkProperty < Resource
+  class LinkProperty < OResource
     configure :base_uri => OmnResource.LinkProperty
     type RDF::URI.new('http://open-multinet.info/ontology/omn-resource#LinkProperty')
+
+    # Object Properties
+
+    has_many :hasProperty, :predicate => OmnResource.hasProperty, :type => :Link
+
   end
 
   class Path < NetworkObject
