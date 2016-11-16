@@ -133,6 +133,10 @@ module Semantic
     property :hasIdRef, :predicate => OmnLifecycle.hasIdRef, :type => String
     property :hasSliceID, :predicate => OmnLifecycle.hasSliceID, :type => String
 
+    # Exoun mpei proswrina mexri na vroume ti paizei
+    property :expirationTime, :predicate => OmnLifecycle.expirationTime, :type => DateTime
+    property :startTime, :predicate => OmnLifecycle.startTime, :type => DateTime
+
   end
 
   class Resource < Spira::Base

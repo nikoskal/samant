@@ -10,10 +10,13 @@ module Thin
     @intermediate_certs
 
     def ssl_verify_peer(cert_s)
+      debug "intermediate certs = " + @intermediate_certs.inspect
       @intermediate_certs = OpenSSL::X509::Store.new if @intermediate_certs.nil?
       cert = OpenSSL::X509::Certificate.new(cert_s)
+      debug "certificate: \n#{cert}"
       if OpenSSL::SSL::SSLContext::DEFAULT_CERT_STORE.verify(cert) || @intermediate_certs.verify(cert)
         #debug("Verified:\n#{cert}")
+        debug "Verified"
         @intermediate_certs.add_cert(cert)
         @authenticated = true
         return true

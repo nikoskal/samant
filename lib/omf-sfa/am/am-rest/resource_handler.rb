@@ -165,7 +165,7 @@ module OMF::SFA::AM::Rest
         when 'xml'
           show_resources_xml(resource, path, opts)
         when 'ttl'
-          show_resources_ttl(resource, opts)
+          self.class.show_resources_ttl(resource, opts)
         else
           show_resources_json(resource, path, opts)
       end
@@ -185,12 +185,14 @@ module OMF::SFA::AM::Rest
       ['application/json', JSON.pretty_generate({:resource_response => res}, :for_rest => true)]
     end
 
-    def show_resources_ttl(resource, opts)
+    ### self.tade, alliws einai instance method. emeis tin theloume class method
+
+    def self.show_resources_ttl(resource, opts)
       debug "show_resources_ttl"
       ['application/json', resource_to_turtle(resource, opts)]
     end
 
-    def resource_to_turtle(query, opts)
+    def self.resource_to_turtle(query, opts)
       if query.nil?
         return ::JSON.pretty_generate({:response => "OK", :about => opts[:req].path}) # KARATIA MEGALI 2
       end

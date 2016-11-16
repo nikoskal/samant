@@ -10,6 +10,7 @@ module Semantic
   # exw allaksei Resource se OResource
 
   OmnResource = RDF::Vocabulary.new("http://open-multinet.info/ontology/omn-resource#")
+  OmnLifecycle = RDF::Vocabulary.new("http://open-multinet.info/ontology/omn-lifecycle#")
 
   # Built in vocabs: OWL, RDF, RDFS
 
@@ -54,6 +55,15 @@ module Semantic
   class Node < NetworkObject
     configure :base_uri => OmnResource.Node
     type RDF::URI.new('http://open-multinet.info/ontology/omn-resource#Node')
+
+
+    # apo dw kai katw ta exw prosthesei egw gia testing
+    property :hasSliceID, :predicate => OmnLifecycle.hasSliceID, :type => String
+    property :hasComponentID, :predicate => OmnLifecycle.hasComponentID, :type => URI
+    property :hasState , :predicate => OmnLifecycle.hasState, :type => :State
+
+    attr_accessor :child
+
   end
 
   class Openflow < NetworkObject

@@ -99,7 +99,7 @@ map "/omn-resources" do
   run OMF::SFA::AM::Rest::ResourceHandler.new(opts[:am][:manager], opts.merge({ :semantic => true }))
 end
 
-map "/listresources" do
+map "/samant" do
   use OMF::SFA::AM::Rest::SessionAuthenticator, #:expire_after => 10,
       :login_url => (REQUIRE_LOGIN ? '/login' : nil),
       :no_session => ['^/$', "^#{RPC_URL}", '^/login', '^/logout', '^/readme', '^/assets'],

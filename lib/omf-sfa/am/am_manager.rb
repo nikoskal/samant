@@ -1,4 +1,4 @@
-  
+require 'rdf'
 require 'omf_common/lobject'
 require 'omf-sfa/am'
 require 'nokogiri'
@@ -6,6 +6,7 @@ require 'active_support/inflector' # for classify method
 require_relative '../omn-models/resource'
 require_relative '../omn-models/account'
 require_relative '../omn-models/populator'
+
 
 
 
@@ -24,6 +25,15 @@ module OMF::SFA::AM
 
   # Namespace used for reservation information
   OL_NAMESPACE = "http://nitlab.inf.uth.gr/schema/sfa/rspec/1"
+  OL_SEMANTICNS = "http://open-multinet.info/ontology/omn-lifecycle#hasLease"
+  RES_SEMANTICNS = "http://open-multinet.info/ontology/omn#hasResource"
+  OMNstartTime = "http://open-multinet.info/ontology/omn-lifecycle#startTime"
+  OMNexpirationTime = "http://open-multinet.info/ontology/omn-lifecycle#expirationTime"
+  OMNlease = "http://open-multinet.info/ontology/omn-lifecycle#Lease/"
+  OMNcomponentID = "http://open-multinet.info/ontology/omn-lifecycle#hasComponentID"
+  OMNID =  "http://open-multinet.info/ontology/omn-lifecycle#hasID"
+  W3type = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+  W3label = "http://www.w3.org/2000/01/rdf-schema#label"
 
   # The manager is where all the AM related policies and
   # resource management is concentrated. Testbeds with their own
@@ -252,6 +262,19 @@ module OMF::SFA::AM
       lease
     end
 
+    def find_samant_lease(lease_urn, authorizer)
+      # lease_id.slice! OMNlease # to xrisimopoiousa otan evaza olokliro urn
+      debug "find lease:  '#{lease_urn}'"
+      lease_uri = RDF::URI.new(lease_urn)
+      sparql = SPARQL::Client.new($repository)
+      unless sparql.ask.whether([lease_uri, :p, :o]).true?
+        raise UnavailableResourceException.new "Unknown lease with urn'#{lease_urn.inspect}'"
+      end
+      raise InsufficientPrivilegesException unless authorizer.can_view_lease?(lease_urn)
+      return Semantic::Lease.for(lease_urn)
+      #debug "to vrika, me id = " + lease.hasID.inspect
+    end
+
     # Return the lease described by +lease_descr+. Create if it doesn't exist.
     #
     # @param [Hash] lease_descr properties of lease
@@ -274,6 +297,21 @@ module OMF::SFA::AM
       @scheduler.list_all_event_scheduler_jobs #debug messages only
       lease
       # lease = create_resource(lease_descr, 'Lease', lease_properties, authorizer)
+    end
+
+    def find_or_create_samant_lease(lease_urn, lease_descr, authorizer)
+      debug "find_or_create_samant_lease: '#{lease_descr.inspect}' " + lease_urn.inspect
+      begin
+        return find_samant_lease(lease_urn, authorizer)
+      rescue UnavailableResourceException
+      end
+      raise InsufficientPrivilegesException unless authorizer.can_create_resource?(lease_descr, 'lease') # to lease_descr den xrisimopoieitai
+      lease = Semantic::Lease.for(lease_urn, lease_descr).save!
+
+      raise UnavailableResourceException.new "Cannot create '#{lease_descr.inspect}'" unless lease
+      @scheduler.add_samant_lease_events_on_event_scheduler(lease)
+      @scheduler.list_all_event_scheduler_jobs
+      lease
     end
 
     # Find al leases if no +account+ and +status+ is given
@@ -300,8 +338,50 @@ module OMF::SFA::AM
       end.compact
     end
 
-    def find_all_samant_leases(account = nil, status = ['pending', 'accepted', 'active', 'past', 'cancelled'], authorizer)
-      debug "find_all_samant_leases: account: #{account.inspect} status: #{status}"
+    # !!!SAMANT PROJECT ADDITION!!!
+    #
+    # Find all leases if +account+ and +state+ is given
+    #
+    # @param [Account] filter the leases by account
+    # @param [State] filter the leases by their status ['pending', 'accepted', 'active', 'past', 'cancelled']
+    # @param [Authorizer] Authorization context
+    # @return [Lease] The requested leases
+    #
+
+    def find_all_samant_leases(account_urn = nil, state, authorizer)
+      debug "find_all_samant_leases: account: #{authorizer.account.inspect} status: #{state.inspect}"
+
+      if account_urn.nil?
+        if state.kind_of?(Array)
+          leases = []
+          state.each { |istate|
+            leases << Semantic::Lease.find(:all, :conditions => {:hasState => istate.to_uri})
+          }
+          leases.flatten!
+        else
+          leases = Semantic::Lease.find(:all, :conditions => {:hasState => state.to_uri})
+        end
+      else
+        #debug "slice urn = " + account[:urn]
+        raise InsufficientPrivilegesException unless account_urn == authorizer.account[:urn]
+        if state.kind_of?(Array)
+          leases = []
+          state.each { |istate|
+            leases << Semantic::Lease.find(:all, :conditions => {:hasSliceID => authorizer.account[:urn], :hasState => istate.to_uri})
+          }
+          leases.flatten!
+        else
+          leases = Semantic::Lease.find(:all, :conditions => {:hasSliceID => authorizer.account[:urn], :hasState => state.to_uri})
+        end
+      end
+      leases.map do |l| # den paizei rolo to kathe lease pou pernaw san parametro, logika typiko
+        begin
+          raise InsufficientPrivilegesException unless authorizer.can_view_lease?(l)
+          l
+        rescue InsufficientPrivilegesException
+          nil
+        end
+      end
     end
 
     # Modify lease described by +lease_descr+ hash
@@ -316,6 +396,18 @@ module OMF::SFA::AM
       lease.update(lease_properties) # datamapper update, resource
       @scheduler.update_lease_events_on_event_scheduler(lease)
       lease
+    end
+
+    def modify_samant_lease(lease_properties, lease, authorizer)
+      # prepei na ftiaksw tin can_modify_lease?
+      raise InsufficientPrivilegesException unless authorizer.can_modify_samant_lease?(lease)
+      # to time einai parsed!!!!
+      # debug "before update: " + lease.startTime.inspect
+      lease.update_attributes(lease_properties)
+      # debug "after update: " + lease.startTime.inspect
+      @scheduler.update_samant_lease_events_on_event_scheduler(lease)
+      lease
+      #raise OMF::SFA::AM::Rest::BadRequestException.new "MODIFIER NOT YET IMPLEMENTED"
     end
 
     # cancel +lease+
@@ -370,7 +462,7 @@ module OMF::SFA::AM
     #
     #
     def find_resource(resource_descr, resource_type, authorizer, semantic = false) # h perigrafi tou dinetai eite se hash eite se model resource
-      debug "find_resource: descr: '#{resource_descr.inspect}'"
+      debug "find_resource: descr: '#{resource_descr.inspect}'" #synithws mas ta xalaei sto account_id, den prepei na einai managed apo kapoio slice, prepei na einai managed apo ton aggregate manager
       debug resource_type # px Location
       #debug "semantic = " + semantic
       if resource_descr.kind_of? OMF::SFA::Model::Resource
@@ -392,6 +484,23 @@ module OMF::SFA::AM
       end
       raise InsufficientPrivilegesException unless authorizer.can_view_resource?(resource)
       resource
+    end
+
+    def find_samant_resource(resource_descr, resource_type, authorizer)
+      debug "find_samant_resource: descr: '#{resource_descr.inspect}'"
+      if resource_descr.kind_of? Hash
+        # resource_descr = {:isAvailable => false}
+        resource = eval("Semantic::#{resource_type.camelize}").find(:all, :conditions => resource_descr).first
+        # debug "Resource = " + resource.inspect
+      else
+        raise FormatException.new "Unknown resource description type '#{resource_descr.class}' (#{resource_descr})"
+      end
+      unless resource
+        raise UnknownResourceException.new "Resource '#{resource_descr.inspect}' is not available or doesn't exist"
+      end
+      raise InsufficientPrivilegesException unless authorizer.can_view_resource?(resource)
+      resource
+      # raise OMF::SFA::AM::Rest::BadRequestException.new "find RESOURCES NOT YET IMPLEMENTED"
     end
 
     # Find all the resources that fit the description. If it doesn't exist throws +UnknownResourceException+
@@ -549,8 +658,34 @@ module OMF::SFA::AM
       end.compact
     end
 
-    def find_all_samant_components_for_account(account = _get_nil_account, authorizer)
+    # !!!SAMANT PROJECT ADDITION!!!
+    #
+    # Find all components for a specific account. Return the managed components
+    # if no account is given
+    #
+    # @param [Account] Account for which to find all associated component
+    # @param [Authorizer] Defines context for authorization decisions
+    # @return [Array<Component>] The component requested
+    #
 
+    def find_all_samant_components_for_account(account_urn = nil, authorizer)
+      debug "find_all_samant_components_for_account: #{account_urn}"
+      res = []
+      if account_urn.nil?
+        res << Semantic::Resource.find(:all)
+      else
+        raise InsufficientPrivilegesException unless account_urn == authorizer.account[:urn]
+        res << Semantic::Resource.find(:all, :conditions => {:hasSliceID => authorizer.account[:urn]})
+      end
+      res.flatten!
+      res.map do |r|
+        begin
+          raise InsufficientPrivilegesException unless authorizer.can_view_resource?(r)
+          r
+        rescue InsufficientPrivilegesException
+          nil
+        end
+      end
     end
 
     # Find all components
@@ -592,6 +727,19 @@ module OMF::SFA::AM
       create_resource(resource_descr, resource_type, authorizer)
     end
 
+    def find_or_create_samant_resource(resource_descr, resource_type, authorizer)
+      debug "find_or_create_samant_resource: resource '#{resource_descr.inspect}' type: '#{resource_type}'"
+      unless resource_descr.is_a? Hash
+        raise FormatException.new "Unknown resource description '#{resource_descr.inspect}'"
+      end
+      #raise OMF::SFA::AM::Rest::BadRequestException.new "CREATE RESOURCES NOT YET IMPLEMENTED"
+      begin
+        return find_samant_resource(resource_descr, resource_type, authorizer)
+      rescue UnknownResourceException
+      end
+      create_samant_resource(resource_descr, resource_type, authorizer)
+    end
+
     # Create a resource. If an account is given in the resource description
     # a child resource is created. The parent resource should be already present and managed
     # This will provide a copy of the actual physical resource.
@@ -617,7 +765,21 @@ module OMF::SFA::AM
       resource
     end
 
-    # Find or create a resource for an account. If it doesn't exist,
+    def create_samant_resource(resource_descr, type_to_create, authorizer)
+      raise InsufficientPrivilegesException unless authorizer.can_create_samant_resource?(resource_descr, type_to_create)
+
+      unless resource_descr[:hasSliceID]
+        resource = eval("Semantic::#{resource_type.camelize}").for(resource_descr[:hasComponentID].to_s, resource_descr)
+        resource.hasSliceID = _get_nil_account.urn
+      else
+        resource = @scheduler.create_samant_child_resource(resource_descr, type_to_create) # ???
+      end
+
+      raise UnknownResourceException.new "Resource '#{resource_descr.inspect}' cannot be created" unless resource
+      resource
+        #raise OMF::SFA::AM::Rest::BadRequestException.new "create RESOURCES NOT YET IMPLEMENTED"
+    end
+      # Find or create a resource for an account. If it doesn't exist,
     # is already assigned to someone else, or cannot be created, throws +UnknownResourceException+.
     #
     # @param [Hash] describing properties of the requested resource
@@ -630,6 +792,13 @@ module OMF::SFA::AM
       debug "find_or_create_resource_for_account: r_descr:'#{resource_descr}' type:'#{type_to_create}' authorizer:'#{authorizer.inspect}'"
       resource_descr[:account_id] = authorizer.account.id
       find_or_create_resource(resource_descr, type_to_create, authorizer)
+    end
+
+    def find_or_create_samant_resource_for_account(resource_descr, type_to_create, authorizer)
+      #raise OMF::SFA::AM::Rest::BadRequestException.new "CREATE RESOURCES NOT YET IMPLEMENTED"
+      debug "find_or_create_samant_resource_for_account: r_descr:'#{resource_descr}' type:'#{type_to_create}' authorizer:'#{authorizer.inspect}'"
+      resource_descr[:hasSliceID] = authorizer.account.urn
+      find_or_create_samant_resource(resource_descr, type_to_create, authorizer)
     end
 
 
@@ -814,6 +983,53 @@ module OMF::SFA::AM
       end
     end
 
+    # !!!SAMANT PROJECT ADDITION!!!
+
+    def update_samant_resources_from_rspec(descr_el, clean_state, authorizer)
+      debug "SAMANT update_resources_from_rspec: descr_el:'#{descr_el}' clean_state:'#{clean_state}' authorizer:'#{authorizer}'"
+      # Returns an array containing lease urns
+      lease_urns = descr_el[0].values[0][OL_SEMANTICNS].map{|lease| lease["value"]}#.first["value"]
+      # descr_el.detect{|d| d.has_key?("http://open-multinet.info/ontology/omn-lifecycle#Request/urn:uuid:fe603127-6445-4120-aae8-1cf8bcba3e07")} # Returns the first nested hash
+      # debug "is hash? " + leases.is_a?(Hash).to_s
+      # leases2 = leases.values[0]
+      # leases3 = leases2.has_key?(OL_SEMANTICNS)
+      # leases3 = leases2[OL_SEMANTICNS].first
+      # leases4 = leases3.detect{|d| d.has_key?("value")}
+      # debug "leases = " + leases.inspect
+      leases = []
+      if (lease_urns != nil)  # Returns an array containing the respective leases
+        lease_urns.each {
+          |lease_urn|
+          leases << descr_el.detect{|element| element.has_key?(lease_urn)}
+        }
+        #debug "Leases: " + leases.inspect
+        leases = update_samant_leases_from_rspec(leases, authorizer)
+      else
+        leases = []
+      end
+
+      resources = leases
+
+      node_urns = descr_el[0].values[0][RES_SEMANTICNS].map{|res| res["value"]}
+      nodes = []
+      #debug "NODES = " + node_urns.inspect
+      if (node_urns != nil)
+        node_els = []
+        node_urns.each {
+          |node_urn|
+          node_els << descr_el.detect{|element| element.has_key?(node_urn)}
+        }
+        node_els.each {
+          |node_el|
+          nodes << update_samant_resource_from_rspec(node_el, leases, clean_state, authorizer)
+        }
+      else
+        nodes = []
+      end
+
+      raise OMF::SFA::AM::Rest::BadRequestException.new "UPDATE RESOURCES NOT YET IMPLEMENTED"
+    end
+
     # Update a single resource described in +resource_el+. The respective account is
     # extracted from +opts+. Any mentioned resources not already available to the requesting account
     # will be created. If +clean_state+ is set to true, all state of a resource not specifically described
@@ -825,7 +1041,7 @@ module OMF::SFA::AM
         resource = find_resource({:uuid => uuid}, authorizer) # wouldn't know what to create
       elsif comp_id_attr = resource_el.attributes['component_id']
         comp_id = comp_id_attr.value
-        comp_gurn = OMF::SFA::Model::GURN.parse(comp_id)
+        comp_gurn = OMF::SFA::Model::GURN.parse(comp_id) # get rid of "urn:publicid:IDN"
         #if uuid = comp_gurn.uuid
         #  resource_descr = {:uuid => uuid}
         #else
@@ -903,6 +1119,34 @@ module OMF::SFA::AM
       nil
     end
 
+    def update_samant_resource_from_rspec(resource_el, leases, clean_state, authorizer)
+      debug "Resource Element = " + resource_el.inspect
+      resource_el = resource_el.values[0]
+      # Search chain: uuid/id -> component_id -> component_name, (uuid rarely/never used though)
+      # TODO search via uuid
+      if comp_id_attr = resource_el[OMNcomponentID]
+        # debug "YPARXEI COMPONENT ID"
+        resource_descr = {:hasComponentID => RDF::URI.new(comp_id_attr.first["value"])}
+        comp_type = resource_el[W3type].first["value"].split('#')[1]
+        debug "Component URN + Type = " + resource_descr.inspect + " + " + comp_type
+        resource = find_or_create_samant_resource_for_account(resource_descr, comp_type, authorizer)
+        #resource = nil
+        unless resource
+          raise UnknownResourceException.new "Resource '#{resource_el[W3label].first["value"]}' is not available or doesn't exist"
+        end
+      elsif name_attr = resource_el[OMNID]
+        debug "YPARXEI NAME"
+        resource_descr = {:hasID => name_attr.first["value"]}
+        resource = find_or_create_samant_resource_for_account(resource_descr, comp_type, authorizer)
+      else
+        raise FormatException.new "Unknown resource description"
+      end
+
+      # debug "EINAI TO PAIDI? " + resource.uri.to_s # NAI EINAI
+      raise OMF::SFA::AM::Rest::BadRequestException.new "updtr NOT YET IMPLEMENTED"
+
+    end
+
     # Update the leases described in +leases+. Any lease not already assigned to the
     # requesting account will be added. If +clean_state+ is true, the state of all described leases
     # is set to the state described with all other properties set to their default values. Any leases
@@ -927,6 +1171,19 @@ module OMF::SFA::AM
       leases_hash
     end
 
+    def update_samant_leases_from_rspec(leases, authorizer)
+      debug "update_samant_leases_from_rspec: leases:'#{leases.inspect}' authorizer:'#{authorizer.inspect}'"
+      leases_arry = []
+      unless leases.empty?
+        leases.each do |lease|
+          l = update_samant_lease_from_rspec(lease, authorizer)
+          leases_arry << l
+        end
+      end
+      debug "leases array: " + leases_arry.inspect
+      leases_arry
+    end
+
     # Create or Modify leases through RSpecs
     #
     # When a UUID is provided, then the corresponding lease is modified. Otherwise a new
@@ -947,7 +1204,7 @@ module OMF::SFA::AM
       lease_properties = {:valid_from => Time.parse(lease_el[:valid_from]).utc, :valid_until => Time.parse(lease_el[:valid_until]).utc}
 
       begin # an uparxei
-        raise UnavailableResourceException unless UUID.validate(lease_el[:id])
+        raise UnavailableResourceException unless UUID.validate(lease_el[:id]) # mporei na min yparxei kan to lease id (synithws den yparxei)
         lease = find_lease({:uuid => lease_el[:id]}, authorizer) # vres to me uuid
         if lease.valid_from != lease_properties[:valid_from] || lease.valid_until != lease_properties[:valid_until] # update sti diarkeia
           lease = modify_lease(lease_properties, lease, authorizer)
@@ -963,6 +1220,41 @@ module OMF::SFA::AM
         return { (lease_el[:client_id] || lease_el[:id]) => lease }
       end
     end
-    
+
+    def update_samant_lease_from_rspec(lease_el, authorizer)
+      lease_urn = lease_el.keys[0].dup
+      #lease_id.slice! OMNlease
+      lease_el = lease_el.values[0]
+
+      debug "Lease urn: " + lease_urn
+      debug "Lease contains: " + lease_el.inspect
+      #debug "Hash keys: " + lease_el.keys.inspect
+
+      if (!lease_el.has_key?(OMNstartTime) || !lease_el.has_key?(OMNexpirationTime))
+        raise UnavailablePropertiesException.new "Cannot create lease without 'startTime' and 'expirationTime' properties"
+      end
+
+      lease_properties = {:startTime => lease_el[OMNstartTime].first["value"], :expirationTime => lease_el[OMNexpirationTime].first["value"]}
+      #debug "Lease properties: " + lease_properties.inspect
+
+      begin
+        lease = find_samant_lease(lease_urn, authorizer)
+        if lease.startTime != lease_properties[:startTime] || lease.expirationTime != lease_properties[:expirationTime] # prepei na vroume akri me ta startTime, expirationTime
+          lease = modify_samant_lease(lease_properties, lease, authorizer)
+          return lease #{ lease_urn => lease }
+        else
+          return lease #{ lease_urn => lease }
+        end
+
+      rescue UnavailableResourceException
+        lease_descr = {:hasSliceID => authorizer.account[:urn], :startTime => lease_el[OMNstartTime].first["value"], :expirationTime => lease_el[OMNexpirationTime].first["value"], :hasID => lease_urn}
+        #debug "den to vrika! Lease Descr: " + lease_descr.inspect
+        lease = find_or_create_samant_lease(lease_urn, lease_descr, authorizer)
+        # lease.client_id = lease_el[:client_id] # TODO currently not modelled
+        # lease.save
+        return lease #{lease_urn => lease} # TODO clarification on hash return, theloume kati me tripletes
+        # raise OMF::SFA::AM::Rest::BadRequestException.new "UPDATE LEASES NOT YET IMPLEMENTED"
+      end
+    end
   end # class
 end # OMF::SFA::AM

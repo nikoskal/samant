@@ -47,10 +47,40 @@ module OMF::SFA::AM
       child.status = "unknown"
       child.save
 
-      debug "PATERAS " + parent.inspect
+      debug "PATERAS prin" + parent.inspect
       debug "PAIDI " + child.inspect
 
-      parent.add_child(child) # fainetai na xrisimopoiei xml gia na apo8ikeuei ta events tou
+      parent.add_child(child) # fainetai na xrisimopoiei xml gia na apo8ikeuei ta events tou -> OUTE KAN
+
+      # debug "PATERAS meta" + parent.inspect
+      child
+    end
+
+    def create_samant_child_resource(resource_descr, type_to_create)
+      debug "create_samant_child_resource: resource_descr:'#{resource_descr}' type_to_create:'#{type_to_create}'"
+
+      desc = resource_descr.dup # object duplicate
+      desc[:hasSliceID] = get_nil_account.urn
+      type = type_to_create.classify
+      parent = eval("Semantic::#{type}").find(:all, :conditions => desc).first
+
+      if parent.nil? || !parent.isAvailable
+        raise UnknownResourceException.new "Resource '#{desc.inspect}' is not available or doesn't exist"
+      end
+
+      child = parent.copy(RDF::URI.new(parent.uri.to_s+"/child"))
+      child.hasSliceID = resource_descr[:hasSliceID]
+      child.hasState = Semantic::State.for("Unknown")
+      child.save!
+
+      # debug "PATERAS uri " + parent.inspect
+      # debug "PATERAS slice " + parent.hasSliceID
+      # debug "Paidi uri " + child.inspect
+      # debug "PAIDI slice " + child.hasSliceID
+      # debug "PAIDI componentID " + child.hasComponentID
+
+      parent.child = child # MPOREI NA XREIASTEI PERSISTANCE
+      parent.save!
 
       child
     end
@@ -106,6 +136,22 @@ module OMF::SFA::AM
       lease.valid_until <= Time.now ? lease.status = "past" : lease.status = "cancelled"
       l = lease.save
       delete_lease_events_from_event_scheduler(lease) if l
+      l
+    end
+
+    def release_samant_lease(lease)
+      debug "release_samant_lease: lease:'#{lease.inspect}'"
+      unless lease.is_a? Semantic::Lease
+        raise "Expected Lease but got '#{lease.inspect}'"
+      end
+      #lease.components.each do |c|
+      #  c.destroy unless c.parent_id.nil? # Destroy all the children and leave the parent intact
+      #end
+
+      # TODO elaborate on states
+      lease.expirationTime <= Time.now ? lease.hasState = Semantic::State.for(:Past) : lease.hasState = Semantic::State.for(:Cancelled)
+      l = lease.save
+      delete_samant_lease_events_from_event_scheduler(lease) if l
       l
     end
 
@@ -280,6 +326,40 @@ module OMF::SFA::AM
       end
     end
 
+    def add_samant_lease_events_on_event_scheduler(lease)
+      debug "add_samant_lease_events_on_event_scheduler: lease: #{lease.inspect}"
+      t_now = Time.now
+      l_uuid = lease.hasID
+      if t_now >= lease.expirationTime
+        debug "past lease"
+        release_samant_lease(lease)
+        return
+      end
+      if t_now >= lease.startTime # the lease is active - create only the on_lease_end event
+        lease.hasState = Semantic::State.for(:Active)
+        lease.save
+        @event_scheduler.in('0.1s', tag: "#{l_uuid}_start") do # praktika ksekina to twra
+          lease =  Semantic::Lease.find(:all, :conditions => { :hasID => l_uuid} )
+          break if lease.nil?
+          @liaison.on_lease_start(lease) # Not Implemented
+        end
+      else
+        @event_scheduler.at(lease.startTime, tag: "#{l_uuid}_start") do # alliws ksekina to opote sou leei
+          lease =  Semantic::Lease.find(:all, :conditions => { :hasID => l_uuid} )
+          break if lease.nil?
+          lease.hasState = Semantic::State.for(:Active)
+          lease.save
+          @liaison.on_lease_start(lease) # Not Implemented
+        end
+      end
+      @event_scheduler.at(lease.expirationTime, tag: "#{l_uuid}_end") do # stamata to tote
+        lease =  Semantic::Lease.find(:all, :conditions => { :hasID => l_uuid} )
+        lease.hasState = Semantic::State.for(:Past) # TODO kati kalytero gia past
+        lease.save
+        @liaison.on_lease_end(lease) # Not Implemented
+      end
+    end
+
     def update_lease_events_on_event_scheduler(lease)
       debug "update_lease_events_on_event_scheduler: lease: #{lease.inspect}"
       delete_lease_events_from_event_scheduler(lease)
@@ -287,9 +367,33 @@ module OMF::SFA::AM
       list_all_event_scheduler_jobs
     end
 
+    def update_samant_lease_events_on_event_scheduler(lease)
+      debug "update_samant_lease_events_on_event_scheduler: lease: #{lease.inspect}"
+      delete_samant_lease_events_from_event_scheduler(lease)
+      add_samant_lease_events_on_event_scheduler(lease)
+      list_all_event_scheduler_jobs
+      # raise OMF::SFA::AM::Rest::BadRequestException.new "SCHEDULER NOT YET IMPLEMENTED"
+    end
+
     def delete_lease_events_from_event_scheduler(lease)
       debug "delete_lease_events_on_event_scheduler: lease: #{lease.inspect}"
       uuid = lease.uuid # diagrafei ta leases apo ton event scheduler me vasi to uuid tous
+      job_ids = []
+      @event_scheduler.jobs.each do |j|
+        job_ids << j.id if j.tags.first == "#{uuid}_start" || j.tags.first == "#{uuid}_end"
+      end
+
+      job_ids.each do |jid|
+        debug "unscheduling job: #{jid}"
+        @event_scheduler.unschedule(jid)
+      end
+
+      list_all_event_scheduler_jobs
+    end
+
+    def delete_samant_lease_events_from_event_scheduler(lease)
+      debug "delete_samant_lease_events_on_event_scheduler: lease: #{lease.inspect}"
+      uuid = lease.hasID # diagrafei ta leases apo ton event scheduler me vasi to uuid tous
       job_ids = []
       @event_scheduler.jobs.each do |j|
         job_ids << j.id if j.tags.first == "#{uuid}_start" || j.tags.first == "#{uuid}_end"

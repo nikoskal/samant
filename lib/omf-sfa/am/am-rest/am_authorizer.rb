@@ -44,7 +44,8 @@ module OMF::SFA::AM::Rest
         raise OMF::SFA::AM::InsufficientPrivilegesException.new "URN and UUID are missing." if user_descr.empty?
 
         begin
-          user = am_manager.find_user(user_descr)
+          #user = am_manager.find_user(user_descr) !!! EXW ALLAKSEI
+          user = am_manager.find_or_create_user(user_descr)
         rescue OMF::SFA::AM::UnavailableResourceException
           raise OMF::SFA::AM::InsufficientPrivilegesException.new "User: '#{user_descr}' does not exist"
         end
@@ -96,8 +97,18 @@ module OMF::SFA::AM::Rest
     def can_create_resource?(resource, type)
       type = type.downcase
       debug "Check permission 'can_create_resource?' (#{type == 'lease'}, #{@permissions[:can_create_resource?]})"
+      #debug "AKAOUNT " + @account.inspect
+      #debug "GIOUZER " + @user.inspect
       unless (@account == @am_manager._get_nil_account || @user.has_nil_account?(@am_manager)) || (type == 'lease' && @permissions[:can_create_resource?])
         raise OMF::SFA::AM::InsufficientPrivilegesException.new
+      end
+      true
+    end
+
+    def can_create_samant_resource?(resource, type)
+      debug "Check permission (#{@permissions.inspect})"
+      unless @permissions[:can_create_resource?]
+        raise InsufficientPrivilegesException.new
       end
       true
     end
@@ -107,6 +118,15 @@ module OMF::SFA::AM::Rest
     def can_modify_lease?(lease)
       debug "Check permission 'can_modify_lease?' (#{@account == lease.account}, #{@permissions[:can_modify_lease?]})"
       unless (@account == @am_manager._get_nil_account || @user.has_nil_account?(@am_manager)) || (@account == lease.account && @permissions[:can_modify_lease?])
+        raise OMF::SFA::AM::InsufficientPrivilegesException.new
+      end
+      true
+    end
+
+    def can_modify_samant_lease?(lease)
+      # debug "account: " + @account[:urn].inspect
+      # debug "lease account: " + lease.hasSliceID.inspect
+      unless (@account == @am_manager._get_nil_account || @user.has_nil_account?(@am_manager)) || (@account[:urn] == lease.hasSliceID && @permissions[:can_modify_lease?])
         raise OMF::SFA::AM::InsufficientPrivilegesException.new
       end
       true
@@ -149,6 +169,7 @@ module OMF::SFA::AM::Rest
         # @account = am_manager.find_account({name: account}, self) if account
         @account = OMF::SFA::Model::Account.first({name: account}) if account # epistrefei tin prwti emfanisi tou account
         @account = @user.accounts.first if @account.nil?
+        debug "!!! ACCOUNT !!! = " + @account.inspect
 
         if @account.closed?
           raise OMF::SFA::AM::InsufficientPrivilegesException.new("The account '#{@account.name}' is closed.")

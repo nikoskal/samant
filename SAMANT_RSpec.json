@@ -1,0 +1,146 @@
+[
+  {
+    "urn:uuid:fe603127-6445-4120-aae8-1cf8bcba3e07": {
+      "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": [
+        {
+          "type": "literal",
+          "value": "http://open-multinet.info/ontology/omn-lifecycle#Request"
+        }
+      ],
+      "http://www.w3.org/2000/01/rdf-schema#label": [
+        {
+          "type": "literal",
+          "value": "Request"
+        }
+      ],
+      "http://open-multinet.info/ontology/omn#hasResource": [
+        {
+          "type": "literal",
+          "value": "http://open-multinet.info/example#avgrm"
+        }
+      ],
+      "http://open-multinet.info/ontology/omn-lifecycle#hasLease": [
+        {
+          "type": "literal",
+          "value": "urn:uuid:2241fb1d-87a7-44b6-acf8-381f7854915345"
+        },
+        {
+          "type": "literal",
+          "value": "urn:uuid:2241fb1d-87a7-44b6-acf8-381f78549153"
+        }
+      ]
+    }
+  },
+  {
+    "urn:publicid:IDN+omf:nitos.outdoor+node+node0012": {
+      "http://open-multinet.info/ontology/omn-lifecycle#hasComponentName": [
+        {
+          "type": "literal",
+          "value": "node0012"
+        }
+      ]
+    }
+  },
+  {
+    "urn:uuid:2241fb1d-87a7-44b6-acf8-381f78549153": {
+      "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": [
+        {
+          "type": "literal",
+          "value": "http://open-multinet.info/ontology/omn-lifecycle#Lease"
+        }
+      ],
+      "http://open-multinet.info/ontology/omn-lifecycle#expirationTime": [
+        {
+          "type": "literal",
+          "value": "2016-12-11T20:00:05Z",
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime"
+        }
+      ],
+      "http://open-multinet.info/ontology/omn-lifecycle#startTime": [
+        {
+          "type": "literal",
+          "value": "2016-12-11T23:33:33Z",
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime"
+        }
+      ]
+    }
+  },
+  {
+    "urn:uuid:2241fb1d-87a7-44b6-acf8-381f7854915345": {
+      "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": [
+        {
+          "type": "literal",
+          "value": "http://open-multinet.info/ontology/omn-lifecycle#Lease"
+        }
+      ],
+      "http://open-multinet.info/ontology/omn-lifecycle#expirationTime": [
+        {
+          "type": "literal",
+          "value": "2017-12-11T20:00:05Z",
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime"
+        }
+      ],
+      "http://open-multinet.info/ontology/omn-lifecycle#startTime": [
+        {
+          "type": "literal",
+          "value": "2017-12-11T23:33:33Z",
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime"
+        }
+      ]
+    }
+  },
+  {
+    "http://open-multinet.info/example#avgrm": {
+      "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": [
+        {
+          "type": "literal",
+          "value": "http://open-multinet.info/ontology/omn-resource#Node"
+        }
+      ],
+      "http://www.w3.org/2000/01/rdf-schema#label": [
+        {
+          "type": "literal",
+          "value": "avgrm"
+        }
+      ],
+      "http://open-multinet.info/ontology/omn#isResourceOf": [
+        {
+          "type": "literal",
+          "value": "urn:uuid:fe603127-6445-4120-aae8-1cf8bcba3e07"
+        }
+      ],
+      "http://open-multinet.info/ontology/omn-lifecycle#hasComponentID": [
+        {
+          "type": "uri",
+          "value": "urn:publicid:IDN+omf:nitos.outdoor+node+node0012",
+          "datatype": "http://www.w3.org/2001/XMLSchema#anyURI"
+        }
+      ],
+      "http://open-multinet.info/ontology/omn-lifecycle#hasID": [
+        {
+          "type": "literal",
+          "value": "avgrm"
+        }
+      ],
+      "http://open-multinet.info/ontology/omn-lifecycle#implementedBy": [
+        {
+          "type": "literal",
+          "value": "urn:publicid:IDN+omf:nitos.outdoor+node+node0012"
+        }
+      ],
+      "http://open-multinet.info/ontology/omn-lifecycle#managedBy": [
+        {
+          "type": "literal",
+          "value": "urn:publicid:IDN+omf:nitos+authority+cm"
+        }
+      ],
+      "http://open-multinet.info/ontology/omn-resource#isExclusive": [
+        {
+          "type": "literal",
+          "value": "true",
+          "datatype": "http://www.w3.org/2001/XMLSchema#boolean"
+        }
+      ]
+    }
+  }
+]
