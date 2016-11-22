@@ -53,4 +53,6 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "sequel", "4.17.0"
   s.add_runtime_dependency "rufus-scheduler", "3.0.9"
   s.add_runtime_dependency "sqlite3", "1.3.10"
+  s.add_runtime_dependency "rest-client", "2.0.0"
+
 end
