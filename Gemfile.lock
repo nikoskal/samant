@@ -8,6 +8,7 @@ PATH
       builder (= 3.2)
       daemons (= 1.0.9)
       data_mapper (= 1.2.0)
+      do_sqlite3
       em-minitest-spec (= 1.1.1)
       equivalent-xml (= 0.2.9)
       erector (= 0.8.3)
@@ -22,9 +23,10 @@ PATH
       rack-rpc
       rake (= 11.2.2)
       rdf (= 2.0.0)
-      rdf-json
-      rdf-turtle
-      rdf-vocab
+      rdf-do (= 2.0.0)
+      rdf-json (= 2.0.0)
+      rdf-turtle (= 2.0.0)
+      rdf-vocab (= 2.0.2)
       rspec (= 2.11.0)
       rufus-scheduler (= 3.0.9)
       sequel (= 4.17.0)
@@ -48,7 +50,8 @@ GEM
       minitest (~> 5.1)
       thread_safe (~> 0.3, >= 0.3.4)
       tzinfo (~> 1.1)
-    addressable (2.4.0)
+    addressable (2.5.0)
+      public_suffix (~> 2.0, >= 2.0.2)
     amq-protocol (2.0.1)
     amqp (1.6.0)
       amq-protocol (>= 2.0.1)
@@ -56,7 +59,7 @@ GEM
     bcrypt (3.1.11)
     bcrypt-ruby (3.1.5)
       bcrypt (>= 3.1.3)
-    bindata (2.3.1)
+    bindata (2.3.4)
     blather (1.0.0)
       activesupport (>= 2.3.11)
       eventmachine (>= 1.0.0)
@@ -82,6 +85,8 @@ GEM
       dm-transactions (~> 1.2.0)
       dm-types (~> 1.2.0)
       dm-validations (~> 1.2.0)
+    data_objects (0.10.17)
+      addressable (~> 2.1)
     diff-lcs (1.1.3)
     dm-aggregates (1.2.0)
       dm-core (~> 1.2.0)
@@ -111,6 +116,8 @@ GEM
       uuidtools (~> 2.1)
     dm-validations (1.2.0)
       dm-core (~> 1.2.0)
+    do_sqlite3 (0.10.17)
+      data_objects (= 0.10.17)
     ebnf (1.0.1)
       rdf (~> 2.0)
       sxp (~> 1.0)
@@ -131,10 +138,10 @@ GEM
       rubinius-actor
     hamster (3.0.0)
       concurrent-ruby (~> 1.0)
-    hashie (3.4.4)
+    hashie (3.4.6)
     i18n (0.7.0)
     json (1.7.7)
-    json-jwt (1.6.5)
+    json-jwt (1.7.0)
       activesupport
       bindata
       multi_json (>= 1.3)
@@ -173,6 +180,7 @@ GEM
     oml4r (2.10.6)
     polyglot (0.3.5)
     promise (0.3.1)
+    public_suffix (2.0.4)
     rack (1.5.2)
     rack-rpc (0.0.11)
       builder (>= 2.1.2)
@@ -182,6 +190,9 @@ GEM
       hamster (~> 3.0)
       link_header (~> 0.0, >= 0.0.8)
     rdf-aggregate-repo (2.0.0)
+      rdf (~> 2.0)
+    rdf-do (2.0.0)
+      data_objects (~> 0.10)
       rdf (~> 2.0)
     rdf-isomorphic (2.0.0)
       rdf (~> 2.0)
@@ -255,4 +266,4 @@ DEPENDENCIES
   rake
 
 BUNDLED WITH
-   1.12.5
+   1.13.6

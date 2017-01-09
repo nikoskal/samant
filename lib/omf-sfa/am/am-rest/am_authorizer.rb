@@ -113,6 +113,18 @@ module OMF::SFA::AM::Rest
       true
     end
 
+    def can_release_samant_resource?(resource)
+      debug "Check permission (#{@permissions.inspect})"
+      debug "slice urn = " + resource.hasSliceID.inspect
+      debug "account urn = " + @account.urn.inspect
+
+      # TODO ta accounts den mporoun na kanoun release resource!!!
+      unless resource.hasSliceID == @account.id && @permissions[:can_release_resource?]
+        #raise OMF::SFA::AM::InsufficientPrivilegesException.new
+      end
+      true
+    end
+
     ##### LEASE
 
     def can_modify_lease?(lease)
@@ -135,6 +147,15 @@ module OMF::SFA::AM::Rest
     def can_release_lease?(lease)
       debug "Check permission 'can_release_lease?' (#{@account == lease.account}, #{@permissions[:can_release_lease?]})"
       unless (@account == @am_manager._get_nil_account || @user.has_nil_account?(@am_manager)) || (@account == lease.account && @permissions[:can_release_lease?])
+        raise OMF::SFA::AM::InsufficientPrivilegesException.new
+      end
+      true
+    end
+
+    def can_release_samant_lease?(lease)
+      debug "account: " + @account[:urn].inspect
+      debug "lease account: " + lease.hasSliceID.inspect
+      unless (@account == @am_manager._get_nil_account || @user.has_nil_account?(@am_manager)) || (@account[:urn] == lease.hasSliceID && @permissions[:can_release_lease?])
         raise OMF::SFA::AM::InsufficientPrivilegesException.new
       end
       true

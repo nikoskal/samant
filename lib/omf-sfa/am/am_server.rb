@@ -178,7 +178,7 @@ module OMF::SFA::AM
       }
 
 
-      # Thin::Logging.debug = false
+      #Thin::Logging.debug = false
       require 'omf_common/thin/runner'
       OMF::Common::Thin::Runner.new(ARGV, opts).run!
     end

@@ -33,12 +33,15 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "json", "1.7.7"
   s.add_runtime_dependency "blather", "1.0.0"
   s.add_runtime_dependency "spira", "2.0.0"
-  s.add_runtime_dependency "rdf-turtle"
-  s.add_runtime_dependency "rdf-json"
+  s.add_runtime_dependency "rdf-turtle", "2.0.0"
+  s.add_runtime_dependency "rdf-json", "2.0.0"
   s.add_runtime_dependency "sparql", "2.0.0"
   s.add_runtime_dependency "sparql-client"
-  s.add_runtime_dependency "rdf-vocab" #~> 2.0.0
+  s.add_runtime_dependency "rdf-vocab", "2.0.2"
   s.add_runtime_dependency "builder", "3.2"
+  s.add_runtime_dependency "rdf-do", "2.0.0"
+  s.add_runtime_dependency "do_sqlite3"
+  #s.add_runtime_dependency "do_postgres"
 #
   s.add_runtime_dependency "equivalent-xml", "0.2.9"
   s.add_runtime_dependency "rspec", "2.11.0"
@@ -53,6 +56,4 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "sequel", "4.17.0"
   s.add_runtime_dependency "rufus-scheduler", "3.0.9"
   s.add_runtime_dependency "sqlite3", "1.3.10"
-  s.add_runtime_dependency "rest-client", "2.0.0"
-
 end

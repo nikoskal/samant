@@ -2,7 +2,7 @@ require 'omf-sfa/am/am-rest/rest_handler'
 require 'omf-sfa/am/am_manager'
 require 'uuid'
 require_relative '../../omn-models/resource.rb'
-require_relative '../../omn-models/populator.rb'
+#require_relative '../../omn-models/populator.rb'
 
 module OMF::SFA::AM::Rest
 
@@ -220,6 +220,63 @@ module OMF::SFA::AM::Rest
       #debug opts[:req].path
       res << {:about => opts[:req].path}
       ::JSON.pretty_generate(res, :for_rest => true) # apo merged hash se JSON
+    end
+
+    # Creates the omn-rspec
+    # currently works only for advertisement (offering) rspecs
+
+    def self.rspecker(resources)
+      sparql = SPARQL::Client.new($repository)
+      uuid = ("urn:uuid:" + SecureRandom.uuid).to_sym
+      rtype_g = [RDF::URI.new(uuid), RDF::URI.new("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+                 RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#Offering")]
+      rlabel_g = [RDF::URI.new(uuid), RDF::URI.new("http://www.w3.org/2000/01/rdf-schema#label"), "Offering"]
+
+      resources.collect { |rsc|
+        #puts rsc.to_uri
+        rsc_uri = rsc.to_uri
+
+        # Leases
+        type_g = sparql
+                     .construct([rsc_uri, :p, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#Lease")],
+                                [RDF::URI.new(uuid), RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasLease"), rsc_uri])
+                     .where([rsc_uri, :p, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#Lease")])
+        exptime_g = sparql
+                        .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#expirationTime"), :o])
+                        .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#expirationTime"), :o])
+        strtime_g = sparql
+                        .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#startTime"), :o])
+                        .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#startTime"), :o])
+        # Nodes
+        node_g = sparql
+                     .construct([rsc_uri, :p, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#Node")],
+                                [rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#isExclusive"), true],
+                                [RDF::URI.new(uuid), RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasResource"), rsc_uri],
+                                [rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn#isResourceOf"), RDF::URI.new(uuid)])
+                     .where([rsc_uri, :p, RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#UxV")])
+        lbl_g = sparql
+                    .construct([rsc_uri, RDF::URI.new("http://www.w3.org/2000/01/rdf-schema#label"), :o],
+                               [rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasComponentName"), :o])
+                    .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#resourceId"), :o])
+        rlsd_g = sparql
+                     .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#isAvailable"), true])
+                     .where([rsc_uri, RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#hasResourceStatus"),
+                             RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#Released/")])
+        bkd_g = sparql
+                    .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#isAvailable"), false])
+                    .where([rsc_uri, RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#hasResourceStatus"),
+                            RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#Booked/")])
+        slp_g = sparql
+                    .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#isAvailable"), false])
+                    .where([rsc_uri, RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#hasResourceStatus"),
+                            RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#SleepMode/")])
+
+        RDF::Turtle::Writer.open("../probable_rspec.ttl") do |writer|
+          writer << type_g << exptime_g << strtime_g << node_g << lbl_g << rlsd_g << bkd_g << slp_g << rtype_g << rlabel_g
+        end
+
+      }
+
     end
 
     def resource_to_json(resource, path, opts, already_described = {})
@@ -510,5 +567,6 @@ module OMF::SFA::AM::Rest
       end
       resource_descr
     end
+
   end # ResourceHandler
 end # module

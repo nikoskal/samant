@@ -3,7 +3,13 @@ require 'omf-sfa/am/am-rest/resource_handler'
 require 'omf-sfa/am/am_manager'
 require 'uuid'
 require_relative '../../omn-models/resource.rb'
-require_relative '../../omn-models/populator.rb'
+#require_relative '../../omn-models/populator.rb'
+require 'data_objects'
+require 'rdf/do'
+require 'do_sqlite3'
+$repository = Spira.repository = RDF::DataObjects::Repository.new uri: "sqlite3:./test.db"
+require_relative '../../samant_models/sensor.rb'
+require_relative '../../samant_models/uxv.rb'
 
 module OMF::SFA::AM::Rest
 
@@ -11,71 +17,58 @@ module OMF::SFA::AM::Rest
 
     def find_handler(path, opts)
       debug "!!!SAMANT handler!!!"
+      RDF::Util::Logger.logger.parent.level = 'off'
+      # debug "PATH = " + path.inspect
 
-      if path.size == 0
-        raise OMF::SFA::AM::Rest::BadRequestException.new "Invalid URL."
-        # xrisimopoioume tin resource uri gia na perasoume poia function theloume na klithei
-      elsif path.size == 1
-        opts[:resource_uri] = path[0].downcase
-        if opts[:resource_uri] == "getversion"
-        elsif opts[:resource_uri] == "listresources"
-          opts[:slice_urn] = nil
-          opts[:only_available] = false # default == false
-        elsif opts[:resource_uri] == "createsliver"
-          raise OMF::SFA::AM::Rest::BadRequestException.new "Provide the respective slice."
-        end
-
-      elsif path.size == 2
-        opts[:resource_uri] = path[0].downcase
-        if opts[:resource_uri] == "getversion"
-          raise OMF::SFA::AM::Rest::BadRequestException.new "Invalid URL."
-        elsif opts[:resource_uri] == "listresources"
-          opts[:slice_urn] = path[1]
-          opts[:only_available] = false
-        elsif opts[:resource_uri] == "createsliver"
-          opts[:slice_urn] = path[1]
-        end
-
-      elsif path.size == 3
-        opts[:resource_uri] = path[0].downcase
-        if opts[:resource_uri] == "getversion"
-          raise OMF::SFA::AM::Rest::BadRequestException.new "Invalid URL."
-        elsif opts[:resource_uri] == "listresources"
-          opts[:slice_urn] = path[1]
-          opts[:only_available] = (path[2].downcase == "true")
-        elsif opts[:resource_uri] == "createsliver"
-          raise OMF::SFA::AM::Rest::BadRequestException.new "Invalid URL."
-        end
-
+      # Define method called
+      if path.map(&:downcase).include? "getversion"
+        opts[:resource_uri] = "getversion"
+      elsif path.map(&:downcase).include? "listresources"
+        opts[:resource_uri] = "listresources"
+      elsif path.map(&:downcase).include? "createsliver"
+        opts[:resource_uri] = "createsliver"
       else
         raise OMF::SFA::AM::Rest::BadRequestException.new "Invalid URL."
       end
-       #debug opts[:slice_urn].to_s + " " + opts[:only_available].to_s
+
+      # Define slice urn
+      path.any? { |el|
+        if el.include?('urn')
+          opts[:slice_urn] = el
+        end
+      }
+      if opts[:resource_uri] == "createsliver" && opts[:slice_urn] = nil
+        raise OMF::SFA::AM::Rest::BadRequestException.new "Please provide the respective slice."
+      end
+
+      # Check if only_available flag is on
+      opts[:only_available] = path.include? "only_available"
+
       return self
     end
 
     # GET:
     # GetVersion, ListResources, SliverStatus
     #
-    # @param function used to select which functionality is selected
+    # @param method used to select which functionality is selected
     # @param [Hash] options of the request
     # @return [String] Description of the requested resource.
 
-    def on_get (function, opts)
+    def on_get (method, opts)
 
       # GetVersion:
       # Return the version of the GENI Aggregate API
       # supported by this aggregate.
 
-      if function == "getversion"
-        debug "NOT YET IMPLEMENTED"
-        raise OMF::SFA::AM::Rest::BadRequestException.new "NOT YET IMPLEMENTED"
+      if method == "getversion"
+        # debug "NOT YET IMPLEMENTED"
+        raise OMF::SFA::AM::Rest::BadRequestException.new "getversion NOT YET IMPLEMENTED"
 
         # ListResources:
         # Return information about available resources
         # or resources allocated to a slice.
 
-      elsif function == "listresources"
+      elsif method == "listresources"
         debug 'ListResources: Options: ', opts.inspect
 
         authorizer = opts[:req].session[:authorizer]
@@ -84,7 +77,8 @@ module OMF::SFA::AM::Rest
         #debug "!!!ACCOUNT_URN = " + authorizer.account[:urn]
         #debug "!!!ACCOUNT = " + authorizer.user.accounts.first.inspect
 
-        acceptable_lease_states = [Semantic::State.for(:Pending), Semantic::State.for(:Success), Semantic::State.for(:Active)]
+        # Assume PENDING = pending, ALLOCATED = accepted, PROVISIONED = active
+        acceptable_lease_states = [SAMANT::ALLOCATED, SAMANT::PROVISIONED, SAMANT::PENDING]
 
         if opts[:slice_urn]
           # Must provide full slice URN, e.g /urn:publicid:IDN+omf:netmode+account+__default__
@@ -94,16 +88,24 @@ module OMF::SFA::AM::Rest
           resources = @am_manager.find_all_samant_leases(nil, acceptable_lease_states, authorizer)
           comps = @am_manager.find_all_samant_components_for_account(nil, authorizer)
         end
+
         if opts[:only_available]
-          debug "NOT YET IMPLEMENTED"
-          raise OMF::SFA::AM::Rest::BadRequestException.new "NOT YET IMPLEMENTED"
-          #comps.delete_if {|c| !c.available?}
+          debug "only_available selected"
+          comps.delete_if {|c| c.hasResourceStatus.to_uri == SAMANT::BOOKED.to_uri }
         end
         resources.concat(comps)
         #debug "resources " + resources.inspect
+        # TODO convert output to Advertisement Rspec
+        #debug "the resources: " + resources.inspect
+        OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources)
         OMF::SFA::AM::Rest::ResourceHandler.show_resources_ttl(resources, opts)
       end
 
+    rescue OMF::SFA::AM::InsufficientPrivilegesException => e
+      @return_struct[:code][:geni_code] = 3
+      @return_struct[:output] = e.to_s
+      @return_struct[:value] = ''
+      return @return_struct
     end
 
     # POST:
@@ -131,12 +133,40 @@ module OMF::SFA::AM::Rest
 
         rspec = JSON.parse(rspec_s) #, :symbolize_names => true) # Returns an array of nested hashes
         #debug "is hash? " + rspec.is_a?(Hash).to_s
-        resources = @am_manager.update_samant_resources_from_rspec(rspec, true, authorizer)
         debug "PARSED RSPEC = " + rspec.inspect
+        #raise OMF::SFA::AM::UnavailableResourceException.new "BREAKPOINT"
+        resources = @am_manager.update_samant_resources_from_rspec(rspec, true, authorizer)
+        debug "returned resources = " + resources.inspect
 
-        raise OMF::SFA::AM::Rest::BadRequestException.new "NOT YET IMPLEMENTED"
+        #resources.pop #removes last element of array
+        leases_only = true
+        resources.each do |res|
+          if !res.kind_of? SAMANT::Lease
+            #debug "what am i looking? " + res.inspect
+            #debug "is a lease? "
+            leases_only = false
+            break
+          end
+        end
+        # debug "Leases only? " + leases_only.to_s
+
+        if resources.nil? || resources.empty? || leases_only
+          debug('CreateSliver failed', ",all the requested resources were unavailable for the requested DateTime.")
+
+          resources.each do |res|
+            @am_manager.get_scheduler.delete_samant_lease(res) #if res.hasState == Semantic::State.for(:Pending)
+          end
+
+          @return_struct[:code][:geni_code] = 7 # operation refused
+          @return_struct[:output] = "all the requested resources were unavailable for the requested DateTime."
+          @return_struct[:value] = ''
+          return ['application/json', JSON.pretty_generate(@return_struct)]
+        end
+
+        # TODO convert output to Manifest Rspec
+        OMF::SFA::AM::Rest::ResourceHandler.show_resources_ttl(resources, opts)
+        # TODO return error rescues structs like rpc
       end
-
     end
 
   end

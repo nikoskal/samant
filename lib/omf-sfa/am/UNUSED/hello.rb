@@ -614,7 +614,7 @@ require 'rdf/vocab'
 
 
 require_relative '../../omn-models/resource'
-require_relative '../../omn-models/populator'
+#require_relative '../../omn-models/old_populator'
 
 account = Semantic::Account.for(:nil_account) # vres ton default account
 sparql = SPARQL::Client.new($repository)

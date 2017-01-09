@@ -44,12 +44,14 @@ module Semantic
     has_many :hasIPAddress, :predicate => OmnResource.hasIPAddress, :type => :IPAddress
     property :hasSliverType, :predicate => OmnResource.hasSliverType, :type => :SliverType
     property :requiredBy, :predicate => OmnResource.requiredBy, :type => :NetworkObject
+    property :parent, :predicate => OmnResource.parent
     has_many :requires, :predicate => OmnResource.requires, :type => :NetworkObject
 
     # Data Properties
 
     property :isAvailable, :predicate => OmnResource.isAvailable, :type => Boolean
 
+    attr_accessor :child
   end
 
   class Node < NetworkObject
@@ -61,9 +63,15 @@ module Semantic
     property :hasSliceID, :predicate => OmnLifecycle.hasSliceID, :type => String
     property :hasComponentID, :predicate => OmnLifecycle.hasComponentID, :type => URI
     property :hasState , :predicate => OmnLifecycle.hasState, :type => :State
+    property :hasComponentName, :predicate => OmnLifecycle.hasComponentName, :type => String
+    property :hasID, :predicate => OmnLifecycle.hasID, :type => String
+    has_many :hasLease, :predicate => OmnLifecycle.hasLease, :type => :Lease
+
+    property :parent, :predicate => OmnResource.parent
+
 
     attr_accessor :child
-
+    #attr_accessor :parent
   end
 
   class Openflow < NetworkObject

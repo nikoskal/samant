@@ -116,4 +116,5 @@ opts = {
 
 
 Thin::Logging.debug = true
+Thin::Logging.silent = true
 MyRunner.new(ARGV, opts).run!

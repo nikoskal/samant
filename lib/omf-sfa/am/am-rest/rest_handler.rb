@@ -85,6 +85,13 @@ module OMF::SFA::AM::Rest
       #debug "INIT>>> #{am_manager}::#{self}"
       @am_manager = am_manager
       @opts = opts
+      @return_struct = { # hash
+                         :code => {
+                             :geni_code => ""
+                         },
+                         :value => '',
+                         :output => ''
+      }
     end
 
     def call(env)

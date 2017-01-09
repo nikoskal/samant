@@ -125,7 +125,7 @@ module Semantic
     # Object Properties
 
     has_many :hasReservationState, :predicate => OmnLifecycle.hasReservationState, :type => :ReservationState
-    has_many :isReservationOf, :predicate => Omn.isReservationOf #Group,Resource,Service
+    has_many :isReservationOf, :predicate => Omn.isReservationOf, :type => :NetworkObject
 
     # Data Properties
 
