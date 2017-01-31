@@ -69,7 +69,7 @@ module OMF::SFA::AM::Rest
         # or resources allocated to a slice.
 
       elsif method == "listresources"
-        debug 'ListResources: Options: ', opts.inspect
+        debug 'ListResources Shared: Options: ', opts.inspect
 
         authorizer = opts[:req].session[:authorizer]
         #debug "!!!USER = " + authorizer.user.inspect
@@ -97,8 +97,8 @@ module OMF::SFA::AM::Rest
         #debug "resources " + resources.inspect
         # TODO convert output to Advertisement Rspec
         #debug "the resources: " + resources.inspect
-        OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources)
-        OMF::SFA::AM::Rest::ResourceHandler.show_resources_ttl(resources, opts)
+        OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources) # -> creates the advertisement rspec inside /ready4translation
+        OMF::SFA::AM::Rest::ResourceHandler.show_resources_ttl(resources, opts) # -> returns the json formatted results
       end
 
     rescue OMF::SFA::AM::InsufficientPrivilegesException => e

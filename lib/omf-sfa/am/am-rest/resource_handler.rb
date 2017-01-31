@@ -231,10 +231,16 @@ module OMF::SFA::AM::Rest
       rtype_g = [RDF::URI.new(uuid), RDF::URI.new("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
                  RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#Offering")]
       rlabel_g = [RDF::URI.new(uuid), RDF::URI.new("http://www.w3.org/2000/01/rdf-schema#label"), "Offering"]
+      global_writer = []
+      global_writer << rlabel_g << rtype_g
+      i = 0
 
       resources.collect { |rsc|
         #puts rsc.to_uri
         rsc_uri = rsc.to_uri
+        debug "rsc = " + rsc.to_s
+        debug "rsc_uri = " + rsc_uri.to_s
+        i += 1
 
         # Leases
         type_g = sparql
@@ -271,11 +277,19 @@ module OMF::SFA::AM::Rest
                     .where([rsc_uri, RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#hasResourceStatus"),
                             RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#SleepMode/")])
 
-        RDF::Turtle::Writer.open("../probable_rspec.ttl") do |writer|
-          writer << type_g << exptime_g << strtime_g << node_g << lbl_g << rlsd_g << bkd_g << slp_g << rtype_g << rlabel_g
-        end
+       #RDF::Turtle::Writer.buffer do |writer|
+       #  writer << type_g << exptime_g << strtime_g << node_g << lbl_g << rlsd_g << bkd_g << slp_g
+       #  global_writer << writer
+       #end
 
+        global_writer << type_g << exptime_g << strtime_g << node_g << lbl_g << rlsd_g << bkd_g << slp_g
+        #debug "is it array? " + global_writer.kind_of?(Array).to_s
       }
+      RDF::Turtle::Writer.open("ready4translation/adv_rspec.ttl") do |writer|
+        global_writer.collect { |g|
+          writer << g
+        }
+      end
 
     end
 
