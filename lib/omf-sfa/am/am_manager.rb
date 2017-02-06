@@ -677,6 +677,9 @@ module OMF::SFA::AM
     def find_all_samant_components_for_account(account_urn = nil, authorizer)
       debug "find_all_samant_components_for_account: #{account_urn}"
       res = []
+      ifr = [] # interfaces
+      snr = []
+      lct = []
       if account_urn.nil?
         res << SAMANT::UxV.find(:all)
       else
@@ -685,6 +688,10 @@ module OMF::SFA::AM
       end
       res.flatten!
       res.map do |r|
+        # Check for Interfaces & Sensors & Locations (Used in Rspec)
+        snr << r.hasSensorSystem
+        ifr << r.hasInterface
+        lct << r.where
         begin
           raise InsufficientPrivilegesException unless authorizer.can_view_resource?(r)
           r
@@ -692,6 +699,12 @@ module OMF::SFA::AM
           nil
         end
       end
+      ifr.flatten!
+      #debug "@@@@@Interfaces: " + ifr.inspect
+      #debug "@@@@@Sensors: " + snr.inspect
+      #debug "@@@@@Locations: " + lct.inspect
+      res << ifr << lct
+      res.flatten!
     end
 
     # Find all components

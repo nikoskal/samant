@@ -149,36 +149,6 @@ auvTestbed.hasUgvSupport = false
 auvTestbed.hasUsvSupport = true
 auvTestbed.save
 
-uavConnection = SAMANT::Connection.for("urn:UaV+connection".to_sym)
-uavConnection.hasChannelBandwidth = "2.43"
-uavConnection.hasConnectionID = "UaV1Con"
-uavConnection.hasBand = "UaVBand"
-uavConnection.hasMainFrequency = "2.4GHz"
-uavConnection.hasNetTechnology = "ZigBee"
-uavConnection.hasNumberOfAntennas = 1
-uavConnection.hasVendor = "Zig"
-uavConnection.save
-
-ugvConnection = SAMANT::Connection.for("urn:UgV+connection".to_sym)
-ugvConnection.hasChannelBandwidth = "5.03"
-ugvConnection.hasConnectionID = "UgV1Con"
-ugvConnection.hasBand = "UgVBand"
-ugvConnection.hasMainFrequency = "5.0GHz"
-ugvConnection.hasNetTechnology = "3G"
-ugvConnection.hasNumberOfAntennas = 3
-ugvConnection.hasVendor = "Vodafone"
-ugvConnection.save
-
-auvConnection = SAMANT::Connection.for("urn:AuV+connection".to_sym)
-auvConnection.hasChannelBandwidth = "3.43"
-auvConnection.hasConnectionID = "AuV1Con"
-auvConnection.hasBand = "AuVBand"
-auvConnection.hasMainFrequency = "3.0GHz"
-auvConnection.hasNetTechnology = "ZigBee"
-auvConnection.hasNumberOfAntennas = 2
-auvConnection.hasVendor = "Zig"
-auvConnection.save
-
 uav1ExpResConf = SAMANT::ExperimentResourceConfig.for("urn:uav1+exp+resource+config".to_sym)
 uav1ExpResConf.hasExperimentResourceConfigID = "UaV1ExpResConfID"
 uav1ExpResConf.hasExperimentResourceConfigParamValue = 4.5
@@ -260,10 +230,24 @@ auv1HealthInformation.hasGeneralHealthStatus = SAMANT::GENERALWARNING
 auv1HealthInformation.isUpdated = "2015-12-12 04:00:00"
 auv1HealthInformation.save
 
+ifr1 = SAMANT::WiredInterface.for("urn:uuid:interface+1+wired+uav1:eth0".to_sym)
+ifr1.hasComponentID = "urn:uuid:interface+1+wired+uav1:eth0"
+ifr1.hasComponentName = "uav1:eth0"
+ifr1.hasRole = "experimental"
+
+ifr2 = SAMANT::WirelessInterface.for("urn:uuid:interface+2+wireless+ugv1:bt0".to_sym)
+ifr2.hasComponentID = "urn:uuid:interface+2+wireless+ugv1:bt0"
+ifr2.hasComponentName = "ugv1:bt0"
+ifr2.hasRole = "experimental"
+
+ifr3 = SAMANT::WirelessInterface.for("urn:uuid:interface+3+wireless+auv1:ble0".to_sym)
+ifr3.hasComponentID = "urn:uuid:interface+3+wireless+auv1:ble0"
+ifr3.hasComponentName = "auv1:ble0"
+ifr3.hasRole = "experimental"
+
 uav1 = SAMANT::UxV.for("urn:UaV1".to_sym)
 uav1.hasHealthStatus = SAMANT::SHUTDOWN
 uav1.isResourceOf = uavTestbed
-uav1.hasConnection = uavConnection
 uav1.hasResourceStatus = SAMANT::BOOKED
 uav1.where << uav1Point3D
 uav1.hasConfigParameters = uav1ConfigParameters
@@ -271,10 +255,13 @@ uav1.hasHealthInformation = uav1HealthInformation
 uav1.hasUxVType = SAMANT::UAV
 uav1.hasSensorSystem = auv1MultiSensor
 uav1.hasLease = uav1Lease
-uav1.resourceId = "UaV1Id"
+uav1.resourceId = "UaV1_FLEXUS"
 uav1.hasName = "UaV1"
 uav1.hasStatusMessage = "UaVsaysHello"
 uav1.hasDescription = "abcd"
+uav1.hasInterface << ifr1
+ifr1.isInterfaceOf = uav1
+ifr1.save
 
 # add sensors to UxV
 uaV1MultiSensor_list = SAMANT::System.find(:all, :conditions => { :hasID => "UaV1MS345"} )
@@ -288,7 +275,6 @@ uavTestbed.save
 ugv1 = SAMANT::UxV.for("urn:UgV1".to_sym)
 ugv1.hasHealthStatus = SAMANT::OK
 ugv1.isResourceOf = ugvTestbed
-ugv1.hasConnection = ugvConnection
 ugv1.hasResourceStatus = SAMANT::SLEEPMODE
 ugv1.where << ugv1Point3D
 ugv1.hasConfigParameters = ugv1ConfigParameters
@@ -296,10 +282,13 @@ ugv1.hasHealthInformation = ugv1HealthInformation
 ugv1.hasUxVType = SAMANT::UGV
 ugv1.hasSensorSystem = auv1MultiSensor
 ugv1.hasLease = ugv1Lease
-ugv1.resourceId = "UgV1Id"
+ugv1.resourceId = "UgV1_VENAC"
 ugv1.hasName = "UgV1"
 ugv1.hasStatusMessage = "UgVsaysHello"
 ugv1.hasDescription = "abcde"
+ugv1.hasInterface << ifr2
+ifr2.isInterfaceOf = ugv1
+ifr2.save
 
 # add sensors to UxV
 ugv1MultiSensor_list = SAMANT::System.find(:all, :conditions => { :hasID => "UgV1MS345"} )
@@ -313,7 +302,6 @@ ugvTestbed.save
 auv1 = SAMANT::UxV.for("urn:AuV1".to_sym)
 auv1.hasHealthStatus = SAMANT::WARNING
 auv1.isResourceOf = auvTestbed
-auv1.hasConnection = auvConnection
 auv1.hasResourceStatus = SAMANT::RELEASED
 auv1.where << auv1Point3D
 auv1.hasConfigParameters = auv1ConfigParameters
@@ -321,10 +309,13 @@ auv1.hasHealthInformation = auv1HealthInformation
 auv1.hasUxVType = SAMANT::AUV
 auv1.hasSensorSystem = auv1MultiSensor
 auv1.hasLease = auv1Lease
-auv1.resourceId = "AuV1Id"
+auv1.resourceId = "AuV1_ALTUS"
 auv1.hasName = "AuV1"
 auv1.hasStatusMessage = "AuVsaysHello"
 auv1.hasDescription = "abcdef"
+auv1.hasInterface << ifr3
+ifr3.isInterfaceOf = auv1
+ifr3.save
 
 # add sensors to UxV
 auv1MultiSensor_list = SAMANT::System.find(:all, :conditions => { :hasID => "UaV1MS345"} )

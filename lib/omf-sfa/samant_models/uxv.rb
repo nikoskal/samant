@@ -6,9 +6,11 @@ module SAMANT
   # Built in vocabs: OWL, RDF, RDFS
 
   OMNupper = RDF::Vocabulary.new("http://open-multinet.info/ontology/omn#")
+  OMNresource = RDF::Vocabulary.new("http://open-multinet.info/ontology/omn-resource#")
   OMNlifecycle = RDF::Vocabulary.new("http://open-multinet.info/ontology/omn-lifecycle#")
   OMNfederation = RDF::Vocabulary.new("http://open-multinet.info/ontology/omn-federation#")
-  SAMANTuxv = RDF::Vocabulary.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#")
+  OMNwireless = RDF::Vocabulary.new("http://open-multinet.info/ontology/omn-federation#")
+  SAMANTuxv = RDF::Vocabulary.new("http://open-multinet.info/ontology/omn-domain-wireless#")
   FOAF = RDF::Vocabulary.new("http://xmlns.com/foaf/0.1/")
   GML = RDF::Vocabulary.new("http://www.opengis.net/gml/")
   GEO = RDF::Vocabulary.new("http://www.georss.org/georss/")
@@ -22,10 +24,55 @@ module SAMANT
     type RDF::URI.new("http://www.opengis.net/gml/_Geometry")
   end
 
+  class Channel < Spira::Base
+    # Imported from omn-domain-wireless:Channel
+    configure :base_uri => OMNwireless.Channel
+    type RDF::URI.new("http://open-multinet.info/ontology/omn-domain-wireless#Channel")
+    # Object Properties
+    property :supportsStandard, :predicate => OMNwireless.supportsStandard, :type => :Standard
+    property :usesFrequency, :predicate => OMNwireless.usesFrequency, :type => :Frequency
+    # Data Properties
+    property :channelNum, :predicate => OMNwireless.channelNum, :type => RDF::XSD.integer
+  end
+
+  class OFrequency < Spira::Base
+    # Imported from omn-domain-wireless:Frequency
+    configure :base_uri => OMNwireless.Frequency
+    type RDF::URI.new("http://open-multinet.info/ontology/omn-domain-wireless#Frequency")
+    # Data Properties
+    property :lowerBoundFrequency, :predicate => OMNwireless.lowerBoundFrequency, :type => RDF::XSD.integer
+    property :upperBoundFrequency, :predicate => OMNwireless.upperBoundFrequency, :type => RDF::XSD.integer
+  end
+
+  class Standard < Spira::Base
+    # Imported from omn-domain-wireless:Standard
+    configure :base_uri => OMNwireless.Standard
+    type RDF::URI.new("http://open-multinet.info/ontology/omn-domain-wireless#Standard")
+  end
+
+  class Size < Spira::Base
+    configure :base_uri => SAMANTuxv.Size
+    type RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#Size")
+  end
+
   class Reservation < Spira::Base
     # Imported from omn:Reservation
     configure :base_uri => OMNupper.Reservation
     type RDF::URI.new("http://open-multinet.info/ontology/omn#Reservation")
+  end
+
+  class Interface < Spira::Base
+    # Imported from omn-resource:Interface
+    configure :base_uri => OMNresource.Interface
+    type RDF::URI.new("http://open-multinet.info/ontology/omn-resource#Interface")
+    # Object Properties
+    property :hasComponent, :predicate => OMNresource.hasComponent, :type => :Channel
+    property :isInterfaceOf, :predicate => OMNresource.isInterfaceOf, :type => :UxV
+    # Data Properties
+    property :hasID, :predicate => OMNlifecycle.hasID, :type => String
+    property :hasComponentName, :predicate => OMNlifecycle.hasComponentName, :type => String
+    property :hasComponentID, :predicate => OMNlifecycle.hasComponentID, :type => URI
+    property :hasRole, :predicate => OMNlifecycle.hasRole, :type => String
   end
 
   class ReservationState < Spira::Base
@@ -38,28 +85,12 @@ module SAMANT
     # Imported from omn:Reservation
     configure :base_uri => OMNupper.Resource
     type RDF::URI.new("http://open-multinet.info/ontology/omn#Resource")
-    # Data Properties
   end
 
   class Infrastructure < Spira::Base
     # Imported by omn-federation:Infrastructure
     configure :base_uri => OMNfederation.Infrastructure
     type RDF::URI.new("http://open-multinet.info/ontology/omn-federation#Infrastructure")
-  end
-
-  class Connection < Spira::Base
-    configure :base_uri => SAMANTuxv.Connection
-    type RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#Connection")
-    # Object Properties
-    property :isConnectionOf, :predicate => SAMANTuxv.isConnectionOf, :type => :UxV
-    # Data Properties
-    property :hasBand, :predicate => SAMANTuxv.hasBand, :type => String
-    property :hasChannelBandwidth, :predicate => SAMANTuxv.hasChannelBandwidth, :type => RDF::XSD.double
-    property :hasConnectionID, :predicate => SAMANTuxv.hasConnectionID, :type => String
-    property :hasMainFrequency, :predicate => SAMANTuxv.hasMainFrequency, :type => String
-    property :hasNetTechnology, :predicate => SAMANTuxv.hasNetTechnology, :type => String
-    property :hasNumberOfAntennas, :predicate => SAMANTuxv.hasNumberOfAntennas, :type => Int
-    property :hasVendor, :predicate => SAMANTuxv.hasVendor, :type => String
   end
 
   class HealthStatus < Spira::Base
@@ -109,6 +140,7 @@ module SAMANT
     configure :base_uri => FOAF.Person
     type RDF::URI.new("http://xmlns.com/foaf/0.1/Person")
     # Object Properties
+    property :hasID, :predicate => SAMANTuxv.hasID, :type => RDF::XSD.string
     has_many :hasUserSettings, :predicate => SAMANTuxv.hasUserSettings, :type => :UserSettings
     has_many :usesTestbed, :predicate => SAMANTuxv.usesTestbed, :type => :Testbed
     # Data Properties
@@ -129,6 +161,7 @@ module SAMANT
     property :isConfigParametersOf, :predicate => SAMANTuxv.isConfigParametersOf, :type => :UxV
     property :hasExperimentResourceConfig, :predicate => SAMANTuxv.hasExperimentResourceConfig, :type => :ExperimentResourceConfig
     # Data Properties
+    property :hasID, :predicate => SAMANTuxv.hasID, :type => RDF::XSD.string
     property :hasName, :predicate => SAMANTuxv.hasName, :type => String
     property :hasDescription, :predicate => SAMANTuxv.hasDescription, :type => String
     property :hasConfigParametersID, :predicate => SAMANTuxv.hasConfigParametersID, :type => String
@@ -142,6 +175,7 @@ module SAMANT
     # Object Properties
     property :isExperimentResourceConfigOf, :predicate => SAMANTuxv.isExperimentResourceConfigOf, :type => :ConfigParameters
     # Data Properties
+    property :hasID, :predicate => SAMANTuxv.hasID, :type => RDF::XSD.string
     property :hasExperimentResourceConfigID, :predicate => SAMANTuxv.hasExperimentResourceConfigID, :type => String
     property :hasExperimentResourceConfigParamValue, :predicate => SAMANTuxv.hasExperimentResourceConfigParamValue, :type => Float
   end
@@ -166,11 +200,24 @@ module SAMANT
     property :isGeneralHealthStatusOf, :predicate => SAMANTuxv.isGeneralHealthStatusOf, :type => :HealthInformation
   end
 
+  class WiredInterface < Interface
+    # Imported from omn-domain-wireless:WiredInterface
+    configure :base_uri => OMNwireless.WiredInterface
+    type RDF::URI.new("http://open-multinet.info/ontology/omn-domain-wireless#WiredInterface")
+  end
+
+  class WirelessInterface < Interface
+    # Imported from omn-domain-wireless:WirelessInterface
+    configure :base_uri => OMNwireless.WirelessInterface
+    type RDF::URI.new("http://open-multinet.info/ontology/omn-domain-wireless#WirelessInterface")
+    # Data Properties
+    property :antennaCount, :predicate => OMNwireless.antennaCount, :type => RDF::XSD.integer
+  end
+
   class UxV < Resource
     configure :base_uri => SAMANTuxv.UxV
     type RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#UxV")
     # Object Properties
-    property :hasConnection, :predicate => SAMANTuxv.hasConnection, :type => :Connection
     property :hasHealthStatus, :predicate => SAMANTuxv.hasHealthStatus, :type => :HealthStatus
     property :hasResourceStatus, :predicate => SAMANTuxv.hasResourceStatus, :type => :ResourceStatus
     property :hasHealthInformation, :predicate => SAMANTuxv.hasHealthInformation, :type => :HealthInformation
@@ -182,6 +229,7 @@ module SAMANT
     property :hasSensorSystem, :predicate => SAMANTsensor.hasSensorSystem, :type => :System
     property :hasChild, :predicate => SAMANTuxv.hasChild, :type => :UxV
     property :hasParent, :predicate => SAMANTuxv.hasParent, :type => :UxV
+    has_many :hasInterface, :predicate => OMNresource.hasInterface, :type => :Interface
     has_many :where, :predicate => GEO.where, :type => :Geometry
 
     # Data Properties
@@ -198,6 +246,14 @@ module SAMANT
     property :hasSliverID, :predicate => OMNlifecycle.hasSliverID, :type => String
     property :hasSliverName, :predicate => OMNlifecycle.hasSliverName, :type => String
     property :hasSliceID, :predicate => OMNlifecycle.hasSliceID, :type => String
+    property :weight, :predicate => SAMANTuxv.weight, :type => RDF::XSD.double
+    property :mtoWeight, :predicate => SAMANTuxv.mtoWeight, :type => RDF::XSD.double
+    property :length, :predicate => SAMANTuxv.length, :type => RDF::XSD.double
+    property :width, :predicate => SAMANTuxv.width, :type => RDF::XSD.double
+    property :height, :predicate => SAMANTuxv.height, :type => RDF::XSD.double
+    property :diameter, :predicate => SAMANTuxv.diameter, :type => RDF::XSD.double
+    property :endurance, :predicate => SAMANTuxv.endurance, :type => RDF::XSD.integer
+    property :battery, :predicate => SAMANTuxv.battery, :type => RDF::XSD.integer
   end
 
   class Lease < Reservation
@@ -323,6 +379,7 @@ module SAMANT
     property :where, :predicate => GEO.where, :type => :Geometry
     has_many :hasResource, :predicate => SAMANTuxv.hasResource, :type => :UxV
     # Data Properties
+    property :hasID, :predicate => SAMANTuxv.hasID, :type => RDF::XSD.string
     property :hasName, :predicate => SAMANTuxv.hasName, :type => String
     property :hasDescription, :predicate => SAMANTuxv.hasDescription, :type => String
     property :hasTestbedID, :predicate => SAMANTuxv.hasTestbedID, :type => String

@@ -3,7 +3,7 @@ require 'omf-sfa/am/am-rest/resource_handler'
 require 'omf-sfa/am/am_manager'
 require 'uuid'
 require_relative '../../omn-models/resource.rb'
-#require_relative '../../omn-models/populator.rb'
+require_relative '../../omn-models/populator.rb'
 require 'data_objects'
 require 'rdf/do'
 require 'do_sqlite3'
@@ -97,8 +97,8 @@ module OMF::SFA::AM::Rest
         #debug "resources " + resources.inspect
         # TODO convert output to Advertisement Rspec
         #debug "the resources: " + resources.inspect
-        OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources) # -> creates the advertisement rspec inside /ready4translation
-        OMF::SFA::AM::Rest::ResourceHandler.show_resources_ttl(resources, opts) # -> returns the json formatted results
+        OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources) # -> creates the advertisement rspec inside /ready4translation (less detailed)
+        OMF::SFA::AM::Rest::ResourceHandler.show_resources_ttl(resources, opts) # -> returns the json formatted results (more detailed)
       end
 
     rescue OMF::SFA::AM::InsufficientPrivilegesException => e
