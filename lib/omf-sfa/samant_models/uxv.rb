@@ -1,3 +1,5 @@
+require_relative 'anyURItype.rb' # Custom XSD.anyURI type, missing from Spira Implementation
+
 module SAMANT
 
   # TODO module SAMANT to SAMANT::Model
@@ -70,8 +72,8 @@ module SAMANT
     property :isInterfaceOf, :predicate => OMNresource.isInterfaceOf, :type => :UxV
     # Data Properties
     property :hasID, :predicate => OMNlifecycle.hasID, :type => String
-    property :hasComponentName, :predicate => OMNlifecycle.hasComponentName, :type => String
-    property :hasComponentID, :predicate => OMNlifecycle.hasComponentID, :type => URI
+    property :hasComponentName, :predicate => OMNlifecycle.hasComponentName, :type => RDF::XSD.string
+    property :hasComponentID, :predicate => OMNlifecycle.hasComponentID, :type => XSD.anyURI
     property :hasRole, :predicate => OMNlifecycle.hasRole, :type => String
   end
 
@@ -237,10 +239,10 @@ module SAMANT
     property :hasDescription, :predicate => SAMANTuxv.hasDescription, :type => String
     property :hasName, :predicate => SAMANTuxv.hasName, :type => String
     property :hasStatusMessage, :predicate => SAMANTuxv.hasStatusMessage, :type => String
-    property :hasComponentID, :predicate => OMNlifecycle.hasComponentID, :type => URI
+    property :hasComponentID, :predicate => OMNlifecycle.hasComponentID, :type => RDF::XSD.anyURI
     property :hasComponentManagerID, :predicate => OMNlifecycle.hasComponentManagerID, :type => URI
     property :hasComponentManagerName, :predicate => OMNlifecycle.hasComponentManagerName, :type => URI
-    property :hasComponentName, :predicate => OMNlifecycle.hasComponentName, :type => String
+    property :hasComponentName, :predicate => OMNlifecycle.hasComponentName, :type => RDF::XSD.string
     property :hasOriginalID, :predicate => OMNlifecycle.hasOriginalID, :type => String
     property :hasRole, :predicate => OMNlifecycle.hasRole, :type => String
     property :hasSliverID, :predicate => OMNlifecycle.hasSliverID, :type => String

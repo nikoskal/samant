@@ -165,7 +165,7 @@ module OMF::SFA::AM::Rest
         when 'xml'
           show_resources_xml(resource, path, opts)
         when 'ttl'
-          self.class.show_resources_ttl(resource, opts)
+          self.class.omn_response_json(resource, opts)
         else
           show_resources_json(resource, path, opts)
       end
@@ -187,12 +187,13 @@ module OMF::SFA::AM::Rest
 
     ### self.tade, alliws einai instance method. emeis tin theloume class method
 
-    def self.show_resources_ttl(resource, opts)
+    def self.omn_response_json(resource, opts)
       debug "show_resources_ttl"
-      ['application/json', resource_to_turtle(resource, opts)]
+      #['application/json', resource_to_turtle(resource, opts)]
+      query_to_omn_json(resource, opts)
     end
 
-    def self.resource_to_turtle(query, opts)
+    def self.query_to_omn_json(query, opts)
       if query.nil?
         return ::JSON.pretty_generate({:response => "OK", :about => opts[:req].path}) # KARATIA MEGALI 2
       end
@@ -219,7 +220,7 @@ module OMF::SFA::AM::Rest
       raise UnknownResourceException, "No resources matching the request." if res.empty?
       #debug opts[:req].path
       res << {:about => opts[:req].path}
-      ::JSON.pretty_generate(res, :for_rest => true) # apo merged hash se JSON
+      #::JSON.pretty_generate(res, :for_rest => true) # apo merged hash se JSON
     end
 
     # Creates the omn-rspec
@@ -321,7 +322,7 @@ module OMF::SFA::AM::Rest
         # Locations
         global_writer << sparql
                              .construct([rsc_uri, RDF::URI.new("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), RDF::URI.new("http://open-multinet.info/ontology/omn-resource#Location")],
-                                        [rsc_uri, RDF::URI.new("http://www.geonames.org/ontology#countryCode"), RDF::URI.new("urn:uuid:DUMMY_COUNTRYCODE")])
+                                        [rsc_uri, RDF::URI.new("http://www.geonames.org/ontology#countryCode"), "DUMMY_COUNTRYCODE"])
                              .where([rsc_uri, :p, RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#Point3D")])
         global_writer << sparql
                              .construct([rsc_uri, RDF::URI.new("http://www.w3.org/2003/01/geo/wgs84_pos#lat"), :o])
