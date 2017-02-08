@@ -53,10 +53,10 @@ module Semantic
     type RDF::URI.new('http://open-multinet.info/ontology/omn_wireless.owl#Channel')
   end
 
-  class Frequency < Feature
-    configure :base_uri => OmnWireless.Frequency
-    type RDF::URI.new('http://open-multinet.info/ontology/omn_wireless.owl#Frequency')
-  end
+  #class Frequency < Feature
+  #  configure :base_uri => OmnWireless.Frequency
+  #  type RDF::URI.new('http://open-multinet.info/ontology/omn_wireless.owl#Frequency')
+  #end
 
   class MicroController < Component
     configure :base_uri => OmnWireless.MicroController

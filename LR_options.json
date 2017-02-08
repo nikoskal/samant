@@ -1,0 +1,9 @@
+
+{
+  "options": {
+    "only_available": false,
+    "slice_urn": "dummy_urn",
+    "geni_compressed": false,
+    "geni_rspec_version": 3
+  }
+}

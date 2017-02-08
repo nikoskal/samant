@@ -165,7 +165,7 @@ module OMF::SFA::AM::Rest
         when 'xml'
           show_resources_xml(resource, path, opts)
         when 'ttl'
-          self.class.show_resources_ttl(resource, opts)
+          self.class.omn_response_json(resource, opts)
         else
           show_resources_json(resource, path, opts)
       end
@@ -187,12 +187,13 @@ module OMF::SFA::AM::Rest
 
     ### self.tade, alliws einai instance method. emeis tin theloume class method
 
-    def self.show_resources_ttl(resource, opts)
+    def self.omn_response_json(resource, opts)
       debug "show_resources_ttl"
-      ['application/json', resource_to_turtle(resource, opts)]
+      #['application/json', resource_to_turtle(resource, opts)]
+      query_to_omn_json(resource, opts)
     end
 
-    def self.resource_to_turtle(query, opts)
+    def self.query_to_omn_json(query, opts)
       if query.nil?
         return ::JSON.pretty_generate({:response => "OK", :about => opts[:req].path}) # KARATIA MEGALI 2
       end
@@ -219,7 +220,7 @@ module OMF::SFA::AM::Rest
       raise UnknownResourceException, "No resources matching the request." if res.empty?
       #debug opts[:req].path
       res << {:about => opts[:req].path}
-      ::JSON.pretty_generate(res, :for_rest => true) # apo merged hash se JSON
+      #::JSON.pretty_generate(res, :for_rest => true) # apo merged hash se JSON
     end
 
     # Creates the omn-rspec
@@ -227,62 +228,108 @@ module OMF::SFA::AM::Rest
 
     def self.rspecker(resources)
       sparql = SPARQL::Client.new($repository)
-      uuid = ("urn:uuid:" + SecureRandom.uuid).to_sym
+      uuid = ("urn:uuid:" + SecureRandom.uuid).to_sym # Rspec urn
       rtype_g = [RDF::URI.new(uuid), RDF::URI.new("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
                  RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#Offering")]
       rlabel_g = [RDF::URI.new(uuid), RDF::URI.new("http://www.w3.org/2000/01/rdf-schema#label"), "Offering"]
       global_writer = []
       global_writer << rlabel_g << rtype_g
-      i = 0
 
       resources.collect { |rsc|
+        # Each UxV !MUST! provide the exact following two Hardware Types:
+        hw1 = ("urn:uuid:" + SecureRandom.uuid).to_sym # UxV Hardware Type urn
+        hw2 = ("urn:uuid:" + SecureRandom.uuid).to_sym # Sensor Hardware Type urn
         #puts rsc.to_uri
         rsc_uri = rsc.to_uri
-        debug "rsc = " + rsc.to_s
-        debug "rsc_uri = " + rsc_uri.to_s
-        i += 1
+        #debug "rsc = " + rsc.to_s
+        #debug "rsc_uri = " + rsc_uri.to_s
 
         # Leases
-        type_g = sparql
+        global_writer << sparql
                      .construct([rsc_uri, :p, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#Lease")],
                                 [RDF::URI.new(uuid), RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasLease"), rsc_uri])
                      .where([rsc_uri, :p, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#Lease")])
-        exptime_g = sparql
+        global_writer << sparql
                         .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#expirationTime"), :o])
                         .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#expirationTime"), :o])
-        strtime_g = sparql
+        global_writer << sparql
                         .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#startTime"), :o])
                         .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#startTime"), :o])
         # Nodes
-        node_g = sparql
+        global_writer << sparql
                      .construct([rsc_uri, :p, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#Node")],
                                 [rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#isExclusive"), true],
                                 [RDF::URI.new(uuid), RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasResource"), rsc_uri],
-                                [rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn#isResourceOf"), RDF::URI.new(uuid)])
+                                [rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn#isResourceOf"), RDF::URI.new(uuid)],
+                                [rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#hasHardwareType"), RDF::URI.new(hw1)],
+                                [rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#hasHardwareType"), RDF::URI.new(hw2)],
+                                [rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#managedBy"), RDF::URI.new("urn:uuid:DUMMY_AUTHORITY")],
+                                [RDF::URI.new("urn:uuid:DUMMY_AUTHORITY"), RDF::URI.new("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), RDF::URI.new("http://open-multinet.info/ontology/omn-domain-geni-fire#AMService")])
                      .where([rsc_uri, :p, RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#UxV")])
-        lbl_g = sparql
+        global_writer << sparql
                     .construct([rsc_uri, RDF::URI.new("http://www.w3.org/2000/01/rdf-schema#label"), :o],
                                [rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasComponentName"), :o])
                     .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#resourceId"), :o])
-        rlsd_g = sparql
+        global_writer << sparql
                      .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#isAvailable"), true])
                      .where([rsc_uri, RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#hasResourceStatus"),
                              RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#Released/")])
-        bkd_g = sparql
+        global_writer << sparql
                     .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#isAvailable"), false])
                     .where([rsc_uri, RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#hasResourceStatus"),
                             RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#Booked/")])
-        slp_g = sparql
+        global_writer << sparql
                     .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#isAvailable"), false])
                     .where([rsc_uri, RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#hasResourceStatus"),
                             RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#SleepMode/")])
+        global_writer << sparql
+                     .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#hasInterface"), :o])
+                      .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#hasInterface"), :o])
+        global_writer << sparql
+                      .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#hasLocation"), :o])
+                      .where([rsc_uri, RDF::URI.new("http://www.georss.org/georss/where"), :o])
 
-       #RDF::Turtle::Writer.buffer do |writer|
-       #  writer << type_g << exptime_g << strtime_g << node_g << lbl_g << rlsd_g << bkd_g << slp_g
-       #  global_writer << writer
-       #end
+        # Interfaces
+        global_writer << sparql
+                    .construct([rsc_uri, :p, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#Interface")])
+                    .where([rsc_uri, :p, RDF::URI.new("http://open-multinet.info/ontology/omn-domain-wireless#WiredInterface")])
+        global_writer << sparql
+                    .construct([rsc_uri, :p, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#Interface")])
+                    .where([rsc_uri, :p, RDF::URI.new("http://open-multinet.info/ontology/omn-domain-wireless#WirelessInterface")])
+        global_writer << sparql
+                    .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasComponentID"), :o])
+                    .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasComponentID"), :o])
+        global_writer << sparql
+                      .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasComponentName"), :o])
+                      .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasComponentName"), :o])
+        global_writer << sparql
+                      .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasRole"), :o])
+                      .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasRole"), :o])
 
-        global_writer << type_g << exptime_g << strtime_g << node_g << lbl_g << rlsd_g << bkd_g << slp_g
+        # Hardware Types
+        global_writer << sparql
+                             .construct([RDF::URI.new(hw1), RDF::URI.new("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), RDF::URI.new("http://open-multinet.info/ontology/omn-resource#HardwareType")],
+                                        [RDF::URI.new(hw1), RDF::URI.new("http://www.w3.org/2000/01/rdf-schema#label"), :o])
+                             .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#resourceId"), :o],
+                                    [rsc_uri, :p, RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#UxV")])
+        global_writer << sparql
+                             .construct([RDF::URI.new(hw2), RDF::URI.new("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), RDF::URI.new("http://open-multinet.info/ontology/omn-resource#HardwareType")],
+                                        [RDF::URI.new(hw2), RDF::URI.new("http://www.w3.org/2000/01/rdf-schema#label"), :o])
+                             .where([rsc_uri, :p, RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#UxV")],
+                                    [rsc_uri, RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-sensor#hasSensorSystem"), :s],
+                                    [:s, RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-sensor#hasID"), :o]
+                             )
+        # Locations
+        global_writer << sparql
+                             .construct([rsc_uri, RDF::URI.new("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), RDF::URI.new("http://open-multinet.info/ontology/omn-resource#Location")],
+                                        [rsc_uri, RDF::URI.new("http://www.geonames.org/ontology#countryCode"), "DUMMY_COUNTRYCODE"])
+                             .where([rsc_uri, :p, RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#Point3D")])
+        global_writer << sparql
+                             .construct([rsc_uri, RDF::URI.new("http://www.w3.org/2003/01/geo/wgs84_pos#lat"), :o])
+                             .where([rsc_uri, RDF::URI.new("http://www.w3.org/2003/01/geo/wgs84_pos#lat"), :o])
+        global_writer << sparql
+                             .construct([rsc_uri, RDF::URI.new("http://www.w3.org/2003/01/geo/wgs84_pos#long"), :o])
+                             .where([rsc_uri, RDF::URI.new("http://www.w3.org/2003/01/geo/wgs84_pos#long"), :o])
         #debug "is it array? " + global_writer.kind_of?(Array).to_s
       }
       RDF::Turtle::Writer.open("ready4translation/adv_rspec.ttl") do |writer|
