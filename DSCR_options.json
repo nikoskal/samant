@@ -1,7 +1,7 @@
 
 {
   "options": {
-    "only_available": false,
+    "urns": ["urn:auv1+lease+test", "urn:ugv1+lease+test"],
     "geni_compressed": false,
     "geni_rspec_version": 3
   }

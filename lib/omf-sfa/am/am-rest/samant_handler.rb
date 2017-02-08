@@ -31,26 +31,11 @@ module OMF::SFA::AM::Rest
         raise OMF::SFA::AM::Rest::BadRequestException.new "Invalid URL."
       end
 
-      # Define slice urn
-      path.any? { |el|
-        if el.include?('urn')
-          opts[:slice_urn] = el
-        end
-      }
-      if opts[:resource_uri] == "createsliver" && opts[:slice_urn] = nil
-        raise OMF::SFA::AM::Rest::BadRequestException.new "Please provide the respective slice."
-      end
-
-      # Check if only_available flag is on
-      opts[:only_available] = path.include? "only_available"
-
-
-
       return self
     end
 
     # GET:
-    # GetVersion, ListResources, Describe, Status
+    # GetVersion
     #
     # @param method used to select which functionality is selected
     # @param [Hash] options of the request
@@ -70,11 +55,7 @@ module OMF::SFA::AM::Rest
     end
 
     # POST:
-    #   CreateSliver:
-    #   Allocate resources to a slice. This operation is expected to start the
-    #   allocated resources asynchronously after the operation has
-    #   successfully completed. Callers can check on the status of the
-    #   resources using SliverStatus.
+    # ListResources, Describe, Allocate, Provision, Renew, Status, PerformOperationalAction, Shutdown, Delete
     #
     # @param function used to select which functionality is selected
     # @param [Hash] options of the request
@@ -82,15 +63,18 @@ module OMF::SFA::AM::Rest
 
     def on_post (method, options)
 
+      body, format = parse_body(options)
+      opts = body[:options]
+      #debug "Body & Format = ", opts.inspect + ", " + format.inspect
+
+      # Assume PENDING = pending, ALLOCATED = accepted, PROVISIONED = active, RPC compatibility mappings
+      acceptable_lease_states = [SAMANT::ALLOCATED, SAMANT::PROVISIONED, SAMANT::PENDING]
+
       # ListResources:
       # Return information about available resources
       # or resources allocated to a slice.
 
       if method == "listresources"
-        body, format = parse_body(options)
-        opts = body[:options]
-        #debug "Body = ", opts.inspect
-        #debug "Format = ", format.inspect
         debug 'ListResources: Options: ', opts.inspect
 
         only_available = opts[:only_available]
@@ -103,9 +87,6 @@ module OMF::SFA::AM::Rest
         #debug "!!!ACCOUNT = " + authorizer.account.inspect
         #debug "!!!ACCOUNT_URN = " + authorizer.account[:urn]
         #debug "!!!ACCOUNT = " + authorizer.user.accounts.first.inspect
-
-        # Assume PENDING = pending, ALLOCATED = accepted, PROVISIONED = active, RPC compatibility map
-        acceptable_lease_states = [SAMANT::ALLOCATED, SAMANT::PROVISIONED, SAMANT::PENDING]
 
         if slice_urn
           @return_struct[:code][:geni_code] = 4 # Bad Version
@@ -122,7 +103,7 @@ module OMF::SFA::AM::Rest
           resources.concat(comps)
           #debug "the resources: " + resources.inspect
           used_for_side_effect = OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources) # -> creates the advertisement rspec file inside /ready4translation (less detailed, sfa enabled)
-          res = OMF::SFA::AM::Rest::ResourceHandler.omn_response_json(resources, opts) # -> returns the json formatted results (more detailed, omn enriched)
+          res = OMF::SFA::AM::Rest::ResourceHandler.omn_response_json(resources, options) # -> returns the json formatted results (more detailed, omn enriched)
           # TODO insert identifier to res so to distinguish advertisement from request from manifest etc. (see also am_rpc_service)
         end
 
@@ -135,26 +116,73 @@ module OMF::SFA::AM::Rest
         # Return information about resources allocated to a slice.
 
       elsif method == "describe"
-        #debug 'Describe: URNS: ', urns.inspect, ' Options: ', options.inspect
+        # Request info regarding either *one* slice or *many* slivers belonging to *one_slice*
+        urns = opts[:urns]
+        debug 'Describe: URNS: ', urns.inspect, ' Options: ', opts.inspect
 
-        #if urns.nil? || urns.empty?
-        #  @return_struct[:code][:geni_code] = 1 # Bad Arguments
-        #  @return_struct[:output] = "Arguement 'urns' is either empty or nil."
-        #  @return_struct[:value] = ''
-        #  return ['application/json', JSON.pretty_generate(@return_struct)]
-        #end
+        if urns.nil? || urns.empty?
+          @return_struct[:code][:geni_code] = 1 # Bad Arguments
+          @return_struct[:output] = "Argument 'urns' is either empty or nil."
+          @return_struct[:value] = ''
+          return ['application/json', JSON.pretty_generate(@return_struct)]
+        end
 
-        # compressed = options["geni_compressed"] # TODO Nothing implemented yet for REST API compression
-        # rspec_version = options["geni_rspec_version"] # TODO Nothing implemented yet for REST API rspec_version
+        compressed = opts["geni_compressed"] # TODO Nothing implemented yet for REST API compression
+        rspec_version = opts["geni_rspec_version"] # TODO Nothing implemented yet for REST API rspec_version
 
-        #if slice_urn
-        #  # Must provide full slice URN, e.g /urn:publicid:IDN+omf:netmode+account+__default__
-        #  resources = @am_manager.find_all_samant_leases(opts[:slice_urn], acceptable_lease_states, authorizer)
-        #  comps = @am_manager.find_all_samant_components_for_account(opts[:slice_urn], authorizer)
-        #else
-        #  resources = @am_manager.find_all_samant_leases(nil, acceptable_lease_states, authorizer)
-        #  comps = @am_manager.find_all_samant_components_for_account(nil, authorizer)
-        #end
+        # SLICE == ACCOUNT / SLIVER == LEASE
+        # Must provide full slice URN, e.g /urn:publicid:IDN+omf:netmode+account+__default__
+        slice_urn, slivers_only, error_code, error_msg = parse_samant_urns(urns)
+        if error_code != 0
+          @return_struct[:code][:geni_code] = error_code
+          @return_struct[:output] = error_msg
+          @return_struct[:value] = ''
+          return ['application/json', JSON.pretty_generate(@return_struct)]
+        end
+
+        authorizer = options[:req].session[:authorizer]
+
+        resources = []
+        leases = []
+        if slivers_only
+          urns.each do |urn|
+            l = @am_manager.find_samant_lease(urn, authorizer) # TODO maybe check thoroughly if slice_urn of slivers is the same as the authenticated user's
+            resources << l
+            leases << l
+            l.isReservationOf.each do |comp|
+              resources << comp if comp.hasSliceID == authorizer.account[:urn]
+            end
+          end
+        else
+          resources = @am_manager.find_all_samant_leases(slice_urn, acceptable_lease_states, authorizer)
+          leases = resources.dup
+          resources.concat(@am_manager.find_all_samant_components_for_account(slice_urn, authorizer))
+        end
+
+        used_for_side_effect = OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources) # -> creates the advertisement rspec file inside /ready4translation (less detailed, sfa enabled)
+        res = OMF::SFA::AM::Rest::ResourceHandler.omn_response_json(resources, options) # -> returns the json formatted results (more detailed, omn enriched)
+
+        value = {}
+        value[:omn_rspec] = res # was :geni_rspec
+        value[:geni_urn] = slice_urn
+        value[:geni_slivers] = []
+        leases.each do |lease|
+          tmp = {}
+          tmp[:geni_sliver_urn]         = lease.to_uri.to_s
+          tmp[:geni_expires]            = lease.expirationTime.to_s
+          tmp[:geni_allocation_status]  = if lease.hasReservationState == SAMANT::ALLOCATED then "geni_allocated"
+                                          elsif lease.hasReservationState == SAMANT::PROVISIONED then "geni_provisioned"
+                                          else "geni_unallocated"
+                                          end
+          tmp[:geni_operational_status] = "NO_INFO" # lease.isReservationOf.hasResourceStatus.to_s
+          value[:geni_slivers] << tmp
+        end
+
+        @return_struct[:code][:geni_code] = 0
+        @return_struct[:value] = value
+        @return_struct[:output] = ''
+        return ['application/json', JSON.pretty_generate(@return_struct)]
+
       end
 
       rescue OMF::SFA::AM::InsufficientPrivilegesException => e
@@ -209,6 +237,44 @@ module OMF::SFA::AM::Rest
         #   OMF::SFA::AM::Rest::ResourceHandler.show_resources_ttl(resources, opts)
         #   # TODO return error rescues structs like rpc
         # end
+    end
+
+    def parse_samant_urns(urns)
+      slice_urn = nil
+      slivers_only = false
+
+      urns.each do |urn|
+        utype = urn_type(urn)
+        if utype == "slice" || utype == "account"
+          if urns.size != 1 # you can't send more than one slice urns
+            return ['', '', 1, 'only one slice urn can be described.']
+          end
+          slice_urn = urn
+          break
+        elsif utype == 'lease' || utype == 'sliver'
+          lease_urn = RDF::URI.new(urn)
+          sparql = SPARQL::Client.new($repository)
+          unless sparql.ask.whether([lease_urn, :p, :o]).true?
+            return ['', '', 1, "Lease '#{urn}' does not exist."]
+          end
+          lease = SAMANT::Lease.for(lease_urn)
+          debug "Lease Exists with ID = " + lease.hasID.inspect
+          new_slice_urn = lease.hasSliceID
+          slice_urn = new_slice_urn if slice_urn.nil?
+          if new_slice_urn != slice_urn
+            return ['', '', 1, "All sliver urns must belong to the same slice."]
+          end
+          slivers_only = true
+        else
+          return ['', '', 1, "Only slivers or a slice can be described."]
+        end
+      end
+
+      [slice_urn, slivers_only, 0, '']
+    end
+
+    def urn_type(urn)
+      urn.split('+')[-2]
     end
 
   end

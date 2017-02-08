@@ -1,7 +1,7 @@
 
 {
   "options": {
-    "only_available": false,
+    "urns": ["urn:publicid:IDN+fed4fire:global:netmode1+slice+samant_test"],
     "geni_compressed": false,
     "geni_rspec_version": 3
   }

@@ -367,11 +367,11 @@ module OMF::SFA::AM
         if state.kind_of?(Array)
           leases = []
           state.each { |istate|
-            leases << SAMANT::Lease.find(:all, :conditions => {:hasSliceID => authorizer.account[:urn], :hasReservationState => istate.to_uri})
+            leases << SAMANT::Lease.find(:all, :conditions => {:hasSliceID => account_urn, :hasReservationState => istate.to_uri})
           }
           leases.flatten!
         else
-          leases = SAMANT::Lease.find(:all, :conditions => {:hasSliceID => authorizer.account[:urn], :hasReservationState => state.to_uri})
+          leases = SAMANT::Lease.find(:all, :conditions => {:hasSliceID => account_urn, :hasReservationState => state.to_uri})
         end
       end
       leases.map do |l| # den paizei rolo to kathe lease pou pernaw san parametro, logika typiko
