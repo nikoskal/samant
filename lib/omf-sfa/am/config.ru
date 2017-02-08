@@ -46,9 +46,11 @@ use Rack::Session::Pool
 require 'omf-sfa/am/am-rest/session_authenticator'
 
 map RPC_URL do
-  require 'omf-sfa/am/am-rpc/am_rpc_service'
+  # require 'omf-sfa/am/am-rpc/am_rpc_service'
+  require 'omf-sfa/am/am-rpc/v3/am_rpc_service'
   require 'builder' # otherwise rack-rpc-0.0.6/lib/rack/rpc/endpoint/xmlrpc.rb:85 raises an uninitialized error message
-  service = OMF::SFA::AM::RPC::AMService.new({:manager => am_mgr, :liaison => am_liaison})
+  # service = OMF::SFA::AM::RPC::AMService.new({:manager => am_mgr, :liaison => am_liaison})
+  service = OMF::SFA::AM::RPC::V3::AMService.new({:manager => am_mgr, :liaison => am_liaison})
 
   app = lambda do |env|
     [404, {"Content-Type" => "text/plain"}, ["Not found"]]
