@@ -211,8 +211,9 @@ module OMF::SFA::AM::Rest
           output = RDF::JSON::Writer.buffer do |writer|
             writer << tmp_query #$repository
           end
-          unless prev_output == output # KARATIA MEGALI
-            res << ::JSON.parse(output) # apo JSON se hash, gia na ginei swsto merge
+          unless prev_output == output or output == "null\n"# KARATIA MEGALI
+            # debug "Pre Json Output = " + output.inspect
+            res << ::JSON.parse(output)# apo JSON se hash, gia na ginei swsto merge
             prev_output = output
           end
         end
