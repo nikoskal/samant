@@ -61,16 +61,13 @@ module SAMANT
     has_many :hasSubSystem, :predicate => SSN.hasSubSystem, :type => :SensingDevice
     has_many :hasSubSystem, :predicate => SSN.hasSubSystem, :type => :System
     property :isSensorSystemOf, :predicate => SAMANTsensor.isSensorSystemOf, :type => :UxV
-    property :isSensorSystemOf, :predicate => SAMANTsensor.isSensorSystemOf, :type => :HealthStatus
     # Data Properties
-    property :hasVendorName, :predicate => SAMANTsensor.hasVendorName, :type => String
     property :hasVendorName, :predicate => SAMANTsensor.hasVendorName, :type => String
     property :hasProductName, :predicate => SAMANTsensor.hasProductName, :type => String
     property :hasSerial, :predicate => SAMANTsensor.hasSerial, :type => String
     property :hasID, :predicate => SAMANTsensor.hasID, :type => String
     property :hasDescription, :predicate => SAMANTsensor.hasDescription, :type => String
   end
-
 
   class FeatureOfInterest < Spira::Base
     configure :base_uri => SSN.FeatureOfInterest
