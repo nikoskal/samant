@@ -29,6 +29,8 @@ module OMF::SFA::AM::Rest
         opts[:resource_uri] = "listresources"
       elsif path.map(&:downcase).include? "describe"
         opts[:resource_uri] = "describe"
+      elsif path.map(&:downcase).include? "status"
+        opts[:resource_uri] = "status"
       else
         raise OMF::SFA::AM::Rest::BadRequestException.new "Invalid URL."
       end
@@ -48,6 +50,8 @@ module OMF::SFA::AM::Rest
         list_resources(options)
       elsif method == "describe"
         d_scribe(options)
+      elsif method == "status"
+        status(options)
       end
     end
 
@@ -236,6 +240,65 @@ module OMF::SFA::AM::Rest
                                         else "geni_unallocated"
                                         end
         tmp[:geni_operational_status] = "NO_INFO" # lease.isReservationOf.hasResourceStatus.to_s # TODO Match geni_operational_status with an ontology concept
+        value[:geni_slivers] << tmp
+      end
+
+      @return_struct[:code][:geni_code] = 0
+      @return_struct[:value] = value
+      @return_struct[:output] = ''
+      return ['application/json', JSON.pretty_generate(@return_struct)]
+    rescue OMF::SFA::AM::InsufficientPrivilegesException => e
+      @return_struct[:code][:geni_code] = 3
+      @return_struct[:output] = e.to_s
+      @return_struct[:value] = ''
+      return ['application/json', JSON.pretty_generate(@return_struct)]
+    end
+
+    def status(options)
+      body, format = parse_body(options)
+      params = body[:options]
+      #debug "Body & Format = ", opts.inspect + ", " + format.inspect
+      urns = params[:urns]
+      debug('Status for ', urns.inspect, ' OPTIONS: ', params.inspect)
+
+      if urns.nil?
+        @return_struct[:code][:geni_code] = 1 # Bad Arguments
+        @return_struct[:output] = "The following argument is missing: 'slice_urn'"
+        @return_struct[:value] = ''
+        return ['application/json', JSON.pretty_generate(@return_struct)]
+      end
+
+      slice_urn, slivers_only, error_code, error_msg = parse_samant_urns(urns)
+      if error_code != 0
+        @return_struct[:code][:geni_code] = error_code
+        @return_struct[:output] = error_msg
+        @return_struct[:value] = ''
+        return ['application/json', JSON.pretty_generate(@return_struct)]
+      end
+
+      authorizer = options[:req].session[:authorizer]
+
+      leases = []
+      if slivers_only
+        urns.each do |urn|
+          l = @am_manager.find_samant_lease(urn, authorizer)
+          leases << l
+        end
+      else
+        leases =  @am_manager.find_all_samant_leases(slice_urn, [SAMANT::ALLOCATED, SAMANT::PROVISIONED], authorizer)
+      end
+
+      value = {}
+      value[:geni_urn] = slice_urn
+      value[:geni_slivers] = []
+      leases.each do |lease|
+        tmp = {}
+        tmp[:geni_sliver_urn]         = lease.to_uri.to_s
+        tmp[:geni_expires]            = lease.expirationTime.to_s
+        tmp[:geni_allocation_status]  = if lease.hasReservationState.uri == SAMANT::ALLOCATED.uri then "geni_allocated"
+                                        else "geni_provisioned"
+                                        end
+        tmp[:geni_operational_status] = "NO INFO"
         value[:geni_slivers] << tmp
       end
 
