@@ -23,7 +23,7 @@ omf_sfa_am:
       type: xmpp
       user: am_mgr-1.0
       password: pw
-      server: 10.0.0.200
+      server: 147.102.13.123:5269
       auth:
         :entity_cert: ~/omf_sfa/am.pem
         :entity_key: ~/omf_sfa/am.pkey

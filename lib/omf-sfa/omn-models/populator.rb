@@ -8,12 +8,12 @@ require_relative '../samant_models/uxv.rb'
 # Repopulate triplestore
 RDF::Util::Logger.logger.parent.level = 'off'
 
-sliver1 = SAMANT::Lease.for('urn:publicid:IDN+omf:netmode+sliver+375525ca-12ee-468c-9dd3-23603a7165c9'.to_sym)
-sliver1.hasReservationState = SAMANT::ALLOCATED
-sliver1.startTime = Time.parse('2017-03-01T19:00:00Z')
-sliver1.expirationTime = Time.parse('2017-03-02T20:00:00Z')
-sliver1.hasID = 'urn:publicid:IDN+omf:netmode+sliver+375525ca-12ee-468c-9dd3-23603a7165c9'
-sliver1.hasSliceID = 'urn:publicid:IDN+fed4fire:global:netmode1+slice+samant_test'
+#sliver1 = SAMANT::Lease.for('urn:publicid:IDN+omf:netmode+sliver+375525ca-12ee-468c-9dd3-23603a7165c9'.to_sym)
+#sliver1.hasReservationState = SAMANT::ALLOCATED
+#sliver1.startTime = Time.parse('2017-03-01T19:00:00Z')
+#sliver1.expirationTime = Time.parse('2017-03-02T20:00:00Z')
+#sliver1.hasID = 'urn:publicid:IDN+omf:netmode+sliver+375525ca-12ee-468c-9dd3-23603a7165c9'
+#sliver1.hasSliceID = 'urn:publicid:IDN+fed4fire:global:netmode1+slice+samant_test'
 
 #1111111111111111111111111
 
@@ -31,13 +31,14 @@ uav1Point3D.lat = 5.5701e1
 uav1Point3D.long = 1.2552e1
 uav1Point3D.save
 
-uav1 = SAMANT::UxV.for('urn:publicid:IDN+omf:netmode+node+UaV1'.to_sym)
+uav1 = SAMANT::UxV.for('urn:publicid:IDN+samant+uav+flexus1'.to_sym)
+uav1.hasComponentID = 'urn:publicid:IDN+samant+uav+flexus1'
 uav1.hasResourceStatus = SAMANT::RELEASED
 uav1.hasSliceID = 'urn:publicid:IDN+omf:netmode+account+__default__'
 uav1.where << uav1Point3D
 uav1.hasUxVType = SAMANT::UAV
 uav1.hasSensorSystem = uav1MultiSensor
-uav1.resourceId = 'UaV1_FLEXUS'
+uav1.resourceId = 'UaV_FLEXUS1'
 uav1.hasInterface << ifr1
 ifr1.isInterfaceOf = uav1
 ifr1.save
@@ -59,13 +60,14 @@ auv1Point3D.lat = 2.1701e1
 auv1Point3D.long = 9.355200000000001e1
 auv1Point3D.save
 
-auv1 = SAMANT::UxV.for('urn:publicid:IDN+omf:netmode+node+AuV1'.to_sym)
+auv1 = SAMANT::UxV.for('urn:publicid:IDN+samant+auv+altus1'.to_sym)
+auv1.hasComponentID = 'urn:publicid:IDN+samant+auv+altus1'
 auv1.hasResourceStatus = SAMANT::RELEASED
 auv1.hasSliceID = 'urn:publicid:IDN+omf:netmode+account+__default__'
 auv1.where << auv1Point3D
 auv1.hasUxVType = SAMANT::AUV
 auv1.hasSensorSystem = auv1MultiSensor
-auv1.resourceId = 'AuV1_ALTUS'
+auv1.resourceId = 'AuV_ALTUS1'
 auv1.hasInterface << ifr2
 ifr2.isInterfaceOf = auv1
 ifr2.save
@@ -87,15 +89,14 @@ auv2Point3D.lat = 3.1701e1
 auv2Point3D.long = 10.355200000000001e1
 auv2Point3D.save
 
-auv2 = SAMANT::UxV.for('urn:publicid:IDN+omf:netmode+node+AuV2'.to_sym)
-auv2.hasResourceStatus = SAMANT::BOOKED
-auv2.hasSliceID = 'urn:publicid:IDN+fed4fire:global:netmode1+slice+samant_test'
-auv2.hasLease = sliver1
+auv2 = SAMANT::UxV.for('urn:publicid:IDN+samant+auv+altus2'.to_sym)
+auv2.hasComponentID = 'urn:publicid:IDN+samant+auv+altus2'
+auv2.hasResourceStatus = SAMANT::RELEASED
+auv2.hasSliceID = 'urn:publicid:IDN+omf:netmode+account+__default__'
 auv2.where << auv2Point3D
 auv2.hasUxVType = SAMANT::AUV
 auv2.hasSensorSystem = auv2MultiSensor
-auv2.hasLease = sliver1
-auv2.resourceId = 'AuV2_ALTUS'
+auv2.resourceId = 'AuV_ALTUS2'
 auv2.hasInterface << ifr3
 ifr3.isInterfaceOf = auv2
 ifr3.save
@@ -117,22 +118,21 @@ auv3Point3D.lat = 4.1701e1
 auv3Point3D.long = 11.355200000000001e1
 auv3Point3D.save
 
-auv3 = SAMANT::UxV.for('urn:publicid:IDN+omf:netmode+node+AuV3'.to_sym)
-auv3.hasResourceStatus = SAMANT::BOOKED
-auv3.hasSliceID = 'urn:publicid:IDN+fed4fire:global:netmode1+slice+samant_test'
-auv3.hasLease = sliver1
+auv3 = SAMANT::UxV.for('urn:publicid:IDN+samant+auv+altus3'.to_sym)
+auv3.hasComponentID = 'urn:publicid:IDN+samant+auv+altus3'
+auv3.hasResourceStatus = SAMANT::RELEASED
+auv3.hasSliceID = 'urn:publicid:IDN+omf:netmode+account+__default__'
 auv3.where << auv3Point3D
 auv3.hasUxVType = SAMANT::AUV
 auv3.hasSensorSystem = auv3MultiSensor
-auv3.hasLease = sliver1
-auv3.resourceId = 'AuV3_ALTUS'
+auv3.resourceId = 'AuV_ALTUS3'
 auv3.hasInterface << ifr4
 ifr4.isInterfaceOf = auv3
 ifr4.save
 auv3.save
 
-sliver1.isReservationOf << auv2 << auv3
-sliver1.save
+#sliver1.isReservationOf << auv2 << auv3
+#sliver1.save
 
 #555555555555555555555555555
 
@@ -150,13 +150,14 @@ ugv1Point3D.lat = 4.1701e1
 ugv1Point3D.long = 11.355200000000001e1
 ugv1Point3D.save
 
-ugv1 = SAMANT::UxV.for('urn:publicid:IDN+omf:netmode+node+UgV1'.to_sym)
+ugv1 = SAMANT::UxV.for('urn:publicid:IDN+samant+ugv+altus1'.to_sym)
+ugv1.hasComponentID = 'urn:publicid:IDN+samant+ugv+altus1'
 ugv1.hasResourceStatus = SAMANT::RELEASED
 ugv1.hasSliceID = 'urn:publicid:IDN+omf:netmode+account+__default__'
 ugv1.where << ugv1Point3D
 ugv1.hasUxVType = SAMANT::AUV
 ugv1.hasSensorSystem = auv3MultiSensor
-ugv1.resourceId = 'UgV1_ALTUS'
+ugv1.resourceId = 'UgV_ALTUS1'
 ugv1.hasInterface << ifr5
 ifr5.isInterfaceOf = ugv1
 ifr5.save

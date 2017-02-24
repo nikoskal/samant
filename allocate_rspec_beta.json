@@ -1,0 +1,27 @@
+
+{
+  "options":
+  {
+    "urns": ["urn:publicid:IDN+fed4fire:global:netmode1+slice+samant_test"]
+  },
+  "rspec":
+  {
+    "type": "request",
+    "leases": [
+      {
+        "client_id": "l2",
+        "valid_from": "2017-3-2T19:00:00Z",
+        "valid_until": "2017-3-2T20:00:00Z"
+      }
+    ],
+    "nodes": [
+      {
+        "component_id": "urn:publicid:IDN+samant+uav+flexus1",
+        "component_manager_id": "urn:publicid:IDN+omf:netmode+node+UaV1",
+        "component_name": "UaV1",
+        "exclusive": true,
+        "lease_ref": "l2"
+      }
+    ]
+  }
+}

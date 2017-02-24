@@ -1,7 +1,7 @@
 
 {
   "options": {
-    "only_available": false,
+    "only_available": true,
     "geni_compressed": false,
     "geni_rspec_version": 3
   }

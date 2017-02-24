@@ -3,13 +3,13 @@ require 'omf-sfa/am/am-rest/resource_handler'
 require 'omf-sfa/am/am_manager'
 require 'uuid'
 require_relative '../../omn-models/resource.rb'
-require_relative '../../omn-models/populator.rb'
-require 'data_objects'
-require 'rdf/do'
-require 'do_sqlite3'
-$repository = Spira.repository = RDF::DataObjects::Repository.new uri: "sqlite3:./test.db"
-require_relative '../../samant_models/sensor.rb'
-require_relative '../../samant_models/uxv.rb'
+#require_relative '../../omn-models/populator.rb'
+#require 'data_objects'
+#require 'rdf/do'
+#require 'do_sqlite3'
+#$repository = Spira.repository = RDF::DataObjects::Repository.new uri: "sqlite3:./test.db"
+#require_relative '../../samant_models/sensor.rb'
+#require_relative '../../samant_models/uxv.rb'
 
 module OMF::SFA::AM::Rest
 
@@ -31,6 +31,8 @@ module OMF::SFA::AM::Rest
         opts[:resource_uri] = "describe"
       elsif path.map(&:downcase).include? "status"
         opts[:resource_uri] = "status"
+      elsif path.map(&:downcase).include? "allocate"
+        opts[:resource_uri] = "allocate"
       else
         raise OMF::SFA::AM::Rest::BadRequestException.new "Invalid URL."
       end
@@ -62,53 +64,9 @@ module OMF::SFA::AM::Rest
     # @return [String] Description of the requested resource.
 
     def on_post (method, options)
-
-        # if function == "createsliver"
-        #   rspec_s = opts[:req].body.string
-        #   slice_urn = opts[:slice_urn]
-        #   authorizer = opts[:req].session[:authorizer]
-        #   debug 'CreateSliver: SLICE URN: ', slice_urn , ' RSPEC: ', rspec_s.inspect, ' USERS: ', authorizer.user.inspect
-        #
-        #   if rspec_s.nil?
-        #     # checked in Session Authenticator. You cannot post an empty body message! Returns appropriate error message
-        #   end
-        #
-        #   rspec = JSON.parse(rspec_s) #, :symbolize_names => true) # Returns an array of nested hashes
-        #   #debug "is hash? " + rspec.is_a?(Hash).to_s
-        #   debug "PARSED RSPEC = " + rspec.inspect
-        #   #raise OMF::SFA::AM::UnavailableResourceException.new "BREAKPOINT"
-        #   resources = @am_manager.update_samant_resources_from_rspec(rspec, true, authorizer)
-        #   debug "returned resources = " + resources.inspect
-        #
-        #   #resources.pop #removes last element of array
-        #   leases_only = true
-        #   resources.each do |res|
-        #     if !res.kind_of? SAMANT::Lease
-        #       #debug "what am i looking? " + res.inspect
-        #       #debug "is a lease? "
-        #       leases_only = false
-        #       break
-        #     end
-        #   end
-        #   # debug "Leases only? " + leases_only.to_s
-        #
-        #   if resources.nil? || resources.empty? || leases_only
-        #     debug('CreateSliver failed', ",all the requested resources were unavailable for the requested DateTime.")
-        #
-        #     resources.each do |res|
-        #       @am_manager.get_scheduler.delete_samant_lease(res) #if res.hasState == Semantic::State.for(:Pending)
-        #     end
-        #
-        #     @return_struct[:code][:geni_code] = 7 # operation refused
-        #     @return_struct[:output] = "all the requested resources were unavailable for the requested DateTime."
-        #     @return_struct[:value] = ''
-        #     return ['application/json', JSON.pretty_generate(@return_struct)]
-        #   end
-        #
-        #   # TODO convert output to Manifest Rspec
-        #   OMF::SFA::AM::Rest::ResourceHandler.show_resources_ttl(resources, opts)
-        #   # TODO return error rescues structs like rpc
-        # end
+      if method == "allocate"
+        allocate(options)
+      end
     end
 
     # GetVersion:
@@ -151,9 +109,12 @@ module OMF::SFA::AM::Rest
       else
         resources = @am_manager.find_all_samant_leases(nil, $acceptable_lease_states, authorizer)
         comps = @am_manager.find_all_samant_components_for_account(nil, authorizer)
+        # child nodes should not be included in listresources
+        comps.delete_if {|c| c.to_uri.to_s.include?"/child"}
         if only_available
           debug "only_available selected"
-          comps.delete_if {|c| c.hasResourceStatus.to_uri == SAMANT::BOOKED.to_uri }
+          # TODO maybe delete also interfaces and locations as well
+          comps.delete_if {|c| (c.kind_of?SAMANT::UxV) && (c.hasResourceStatus.to_uri == SAMANT::BOOKED.to_uri) }
         end
         resources.concat(comps)
         #debug "the resources: " + resources.inspect
@@ -253,6 +214,130 @@ module OMF::SFA::AM::Rest
       @return_struct[:value] = ''
       return ['application/json', JSON.pretty_generate(@return_struct)]
     end
+
+    # Allocate:
+    # Allocate resources as described in a request RSpec argument to a slice with the
+    # named URN. On success, one or more slivers are allocated, containing resources
+    # satisfying the request, and assigned to the given slice. Allocated slivers are
+    # held for an aggregate-determined period.
+
+    def allocate(options)
+      body, format = parse_body(options)
+      params = body[:options]
+      #debug "Body & Format = ", opts.inspect + ", " + format.inspect
+      urns = params[:urns]
+      rspec = body[:rspec]
+
+      debug 'Allocate: URNs: ', urns, ' RSPEC: ', rspec, ' Options: ', params.inspect, "time: ", Time.now
+
+      if urns.nil?
+        @return_struct[:code][:geni_code] = 1 # Bad Arguments
+        @return_struct[:output] = "The following arguments is missing: 'urns'"
+        @return_struct[:value] = ''
+        return @return_struct
+      end
+
+      if urns.kind_of? String
+        tmp = urns
+        urns = []
+        urns << tmp
+      end
+
+      slice_urn, slivers_only, error_code, error_msg = parse_samant_urns(urns)
+      if error_code != 0
+        @return_struct[:code][:geni_code] = error_code
+        @return_struct[:output] = error_msg
+        @return_struct[:value] = ''
+        return @return_struct
+      end
+
+      authorizer = options[:req].session[:authorizer]
+
+      #debug "is hash? " + rspec.is_a?(Hash).to_s
+      #debug "PARSED RSPEC = " + rspec.inspect
+      #resources = @am_manager.update_samant_resources_from_rspec(rspec, true, authorizer)
+      #debug "returned resources = " + resources.inspect
+      #raise OMF::SFA::AM::UnavailableResourceException.new "BREAKPOINT"
+
+      resources = @am_manager.update_samant_resources_from_rspec(rspec, true, authorizer)
+      debug "returned resources = " + resources.inspect
+
+        #resources.pop #removes last element of array
+      leases_only = true
+      resources.each do |res|
+        if !res.kind_of? SAMANT::Lease
+          #debug "what am i looking? " + res.inspect
+          #debug "is a lease? "
+          leases_only = false
+          break
+        end
+      end
+      debug "Leases only? " + leases_only.to_s
+
+      if resources.nil? || resources.empty? || leases_only
+        debug('CreateSliver failed', "all the requested resources were unavailable for the requested DateTime.")
+
+        resources.each do |res|
+          # TODO logika to check tou PENDING xreiazetai stin periptwsi kata tin opoia to lease proupirxe
+          @am_manager.get_scheduler.delete_samant_lease(res) # if res.hasReservationState == SAMANT::PENDING
+        end
+
+        @return_struct[:code][:geni_code] = 7 # operation refused
+        @return_struct[:output] = "all the requested resources were unavailable for the requested DateTime."
+        @return_struct[:value] = ''
+        return ['application/json', JSON.pretty_generate(@return_struct)]
+      end
+
+      used_for_side_effect = OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources) # -> creates the advertisement rspec file inside /ready4translation (less detailed, sfa enabled)
+      res = OMF::SFA::AM::Rest::ResourceHandler.omn_response_json(resources, options) # -> returns the json formatted results (more detailed, omn enriched)
+
+      value = {}
+      value[:geni_rspec] = res
+      value[:geni_slivers] = []
+      resources.each do |r|
+        if r.is_a? SAMANT::Lease
+          tmp = {}
+          tmp[:geni_sliver_urn]         = r.to_uri.to_s
+          tmp[:geni_expires]            = r.expirationTime.to_s
+          #debug "Reservation Status vs SAMANT::ALLOCATED: " + lease.hasReservationState.uri + " vs " + SAMANT::ALLOCATED.uri
+          tmp[:geni_allocation_status]  = if r.hasReservationState.uri == SAMANT::ALLOCATED.uri then "geni_allocated"
+                                          else "geni_unallocated"
+                                          end
+          value[:geni_slivers] << tmp
+        end
+      end
+
+      @return_struct[:code][:geni_code] = 0
+      @return_struct[:value] = value
+      @return_struct[:output] = ''
+      return ['application/json', JSON.pretty_generate(@return_struct)]
+    rescue OMF::SFA::AM::InsufficientPrivilegesException => e
+      @return_struct[:code][:geni_code] = 3
+      @return_struct[:output] = e.to_s
+      @return_struct[:value] = ''
+      return ['application/json', JSON.pretty_generate(@return_struct)]
+    rescue OMF::SFA::AM::UnknownResourceException => e
+      debug('CreateSliver Exception', e.to_s)
+      @return_struct[:code][:geni_code] = 12 # Search Failed
+      @return_struct[:output] = e.to_s
+      @return_struct[:value] = ''
+      return ['application/json', JSON.pretty_generate(@return_struct)]
+    rescue OMF::SFA::AM::FormatException => e
+      debug('CreateSliver Exception', e.to_s)
+      @return_struct[:code][:geni_code] = 4 # Bad Version
+      @return_struct[:output] = e.to_s
+      @return_struct[:value] = ''
+      return ['application/json', JSON.pretty_generate(@return_struct)]
+    rescue OMF::SFA::AM::UnavailableResourceException => e
+      @return_struct[:code][:geni_code] = 3
+      @return_struct[:output] = e.to_s
+      @return_struct[:value] = ''
+      return ['application/json', JSON.pretty_generate(@return_struct)]
+    end
+
+    # Status:
+    # Get the status of a sliver or slivers belonging to
+    # a single slice at the given aggregate.
 
     def status(options)
       body, format = parse_body(options)

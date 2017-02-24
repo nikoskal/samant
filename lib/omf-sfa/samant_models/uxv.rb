@@ -11,8 +11,8 @@ module SAMANT
   OMNresource = RDF::Vocabulary.new("http://open-multinet.info/ontology/omn-resource#")
   OMNlifecycle = RDF::Vocabulary.new("http://open-multinet.info/ontology/omn-lifecycle#")
   OMNfederation = RDF::Vocabulary.new("http://open-multinet.info/ontology/omn-federation#")
-  OMNwireless = RDF::Vocabulary.new("http://open-multinet.info/ontology/omn-federation#")
-  SAMANTuxv = RDF::Vocabulary.new("http://open-multinet.info/ontology/omn-domain-wireless#")
+  OMNwireless = RDF::Vocabulary.new("http://open-multinet.info/ontology/omn-domain-wireless#")
+  SAMANTuxv = RDF::Vocabulary.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#")
   FOAF = RDF::Vocabulary.new("http://xmlns.com/foaf/0.1/")
   GML = RDF::Vocabulary.new("http://www.opengis.net/gml/")
   GEO = RDF::Vocabulary.new("http://www.georss.org/georss/")
@@ -21,9 +21,10 @@ module SAMANT
   ##### CLASSES #####
 
   class Geometry < Spira::Base
-    # TODO base_uri needs an underscore
     configure :base_uri => GML._Geometry
     type RDF::URI.new("http://www.opengis.net/gml/_Geometry")
+    # Data Properties
+    property :countryCode, :predicate => SAMANTuxv.countryCode, :type => RDF::XSD.string
   end
 
   class Channel < Spira::Base
@@ -71,10 +72,10 @@ module SAMANT
     property :hasComponent, :predicate => OMNresource.hasComponent, :type => :Channel
     property :isInterfaceOf, :predicate => OMNresource.isInterfaceOf, :type => :UxV
     # Data Properties
-    property :hasID, :predicate => OMNlifecycle.hasID, :type => String
+    property :hasID, :predicate => OMNlifecycle.hasID, :type => RDF::XSD.string
     property :hasComponentName, :predicate => OMNlifecycle.hasComponentName, :type => RDF::XSD.string
     property :hasComponentID, :predicate => OMNlifecycle.hasComponentID, :type => XSD.anyURI
-    property :hasRole, :predicate => OMNlifecycle.hasRole, :type => String
+    property :hasRole, :predicate => OMNlifecycle.hasRole, :type => RDF::XSD.string
   end
 
   class ReservationState < Spira::Base
@@ -126,8 +127,8 @@ module SAMANT
     property :hasUserRole, :predicate => SAMANTuxv.hasUserRole, :type => :UserRole
     property :isUserSettingsOf, :predicate => SAMANTuxv.isUserSettingsOf, :type => :Person
     # Data Properties
-    property :hasPreferences, :predicate => SAMANTuxv.hasPreferences, :type => String
-    property :isUpdated, :predicate => SAMANTuxv.isUpdated, :type => String
+    property :hasPreferences, :predicate => SAMANTuxv.hasPreferences, :type => RDF::XSD.string
+    property :isUpdated, :predicate => SAMANTuxv.isUpdated, :type => RDF::XSD.string
   end
 
   class UxVType < Spira::Base
@@ -146,14 +147,14 @@ module SAMANT
     has_many :hasUserSettings, :predicate => SAMANTuxv.hasUserSettings, :type => :UserSettings
     has_many :usesTestbed, :predicate => SAMANTuxv.usesTestbed, :type => :Testbed
     # Data Properties
-    property :hasEmail, :predicate => SAMANTuxv.hasEmail, :type => String
-    property :hasFirstName, :predicate => SAMANTuxv.hasFirstName, :type => String
-    property :hasSurname, :predicate => SAMANTuxv.hasSurname, :type => String
-    property :hasUserName, :predicate => SAMANTuxv.hasUserName, :type => String
-    property :isSuperUser, :predicate => SAMANTuxv.isSuperUser, :type => Boolean
-    property :lastLogin, :predicate => SAMANTuxv.lastLogin, :type => String
-    property :hasPassword, :predicate => SAMANTuxv.hasPassword, :type => String
-    property :hasUserID, :predicate => SAMANTuxv.hasUserID, :type => String
+    property :hasEmail, :predicate => SAMANTuxv.hasEmail, :type => RDF::XSD.string
+    property :hasFirstName, :predicate => SAMANTuxv.hasFirstName, :type => RDF::XSD.string
+    property :hasSurname, :predicate => SAMANTuxv.hasSurname, :type => RDF::XSD.string
+    property :hasUserName, :predicate => SAMANTuxv.hasUserName, :type => RDF::XSD.string
+    property :isSuperUser, :predicate => SAMANTuxv.isSuperUser, :type => RDF::XSD.boolean
+    property :lastLogin, :predicate => SAMANTuxv.lastLogin, :type => RDF::XSD.string
+    property :hasPassword, :predicate => SAMANTuxv.hasPassword, :type => RDF::XSD.string
+    property :hasUserID, :predicate => SAMANTuxv.hasUserID, :type => RDF::XSD.string
   end
 
   class ConfigParameters < Spira::Base
@@ -164,9 +165,9 @@ module SAMANT
     property :hasExperimentResourceConfig, :predicate => SAMANTuxv.hasExperimentResourceConfig, :type => :ExperimentResourceConfig
     # Data Properties
     property :hasID, :predicate => SAMANTuxv.hasID, :type => RDF::XSD.string
-    property :hasName, :predicate => SAMANTuxv.hasName, :type => String
-    property :hasDescription, :predicate => SAMANTuxv.hasDescription, :type => String
-    property :hasConfigParametersID, :predicate => SAMANTuxv.hasConfigParametersID, :type => String
+    property :hasName, :predicate => SAMANTuxv.hasName, :type => RDF::XSD.string
+    property :hasDescription, :predicate => SAMANTuxv.hasDescription, :type => RDF::XSD.string
+    property :hasConfigParametersID, :predicate => SAMANTuxv.hasConfigParametersID, :type => RDF::XSD.string
     property :hasConfigParametersMinValue, :predicate => SAMANTuxv.hasConfigParametersMinValue, :type => Float
     property :hasConfigParametersMaxValue, :predicate => SAMANTuxv.hasConfigParametersMaxValue, :type => Float
   end
@@ -178,7 +179,7 @@ module SAMANT
     property :isExperimentResourceConfigOf, :predicate => SAMANTuxv.isExperimentResourceConfigOf, :type => :ConfigParameters
     # Data Properties
     property :hasID, :predicate => SAMANTuxv.hasID, :type => RDF::XSD.string
-    property :hasExperimentResourceConfigID, :predicate => SAMANTuxv.hasExperimentResourceConfigID, :type => String
+    property :hasExperimentResourceConfigID, :predicate => SAMANTuxv.hasExperimentResourceConfigID, :type => RDF::XSD.string
     property :hasExperimentResourceConfigParamValue, :predicate => SAMANTuxv.hasExperimentResourceConfigParamValue, :type => Float
   end
 
@@ -191,8 +192,8 @@ module SAMANT
     property :isHealthInformationOf, :predicate => SAMANTuxv.isHealthInformationOf, :type => :SensingDevice
     property :hasGeneralHealthStatus, :predicate => SAMANTuxv.hasGeneralHealthStatus, :type => :GeneralHealthStatus
     # Data Properties
-    property :isUpdated, :predicate => SAMANTuxv.isUpdated, :type => String
-    property :hasMessage, :predicate => SAMANTuxv.hasMessage, :type => String
+    property :isUpdated, :predicate => SAMANTuxv.isUpdated, :type => RDF::XSD.string
+    property :hasMessage, :predicate => SAMANTuxv.hasMessage, :type => RDF::XSD.string
   end
 
   class GeneralHealthStatus < Spira::Base
@@ -235,19 +236,20 @@ module SAMANT
     has_many :where, :predicate => GEO.where, :type => :Geometry
 
     # Data Properties
-    property :resourceId, :predicate => OMNlifecycle.resourceId, :type => String
-    property :hasDescription, :predicate => SAMANTuxv.hasDescription, :type => String
-    property :hasName, :predicate => SAMANTuxv.hasName, :type => String
-    property :hasStatusMessage, :predicate => SAMANTuxv.hasStatusMessage, :type => String
+    property :resourceId, :predicate => OMNlifecycle.resourceId, :type => RDF::XSD.string
+    property :clientID, :predicate => SAMANTuxv.clientID, :type => RDF::XSD.string
+    property :hasDescription, :predicate => SAMANTuxv.hasDescription, :type => RDF::XSD.string
+    property :hasName, :predicate => SAMANTuxv.hasName, :type => RDF::XSD.string
+    property :hasStatusMessage, :predicate => SAMANTuxv.hasStatusMessage, :type => RDF::XSD.string
     property :hasComponentID, :predicate => OMNlifecycle.hasComponentID, :type => RDF::XSD.anyURI
     property :hasComponentManagerID, :predicate => OMNlifecycle.hasComponentManagerID, :type => URI
     property :hasComponentManagerName, :predicate => OMNlifecycle.hasComponentManagerName, :type => URI
     property :hasComponentName, :predicate => OMNlifecycle.hasComponentName, :type => RDF::XSD.string
-    property :hasOriginalID, :predicate => OMNlifecycle.hasOriginalID, :type => String
-    property :hasRole, :predicate => OMNlifecycle.hasRole, :type => String
-    property :hasSliverID, :predicate => OMNlifecycle.hasSliverID, :type => String
-    property :hasSliverName, :predicate => OMNlifecycle.hasSliverName, :type => String
-    property :hasSliceID, :predicate => OMNlifecycle.hasSliceID, :type => String
+    property :hasOriginalID, :predicate => OMNlifecycle.hasOriginalID, :type => RDF::XSD.string
+    property :hasRole, :predicate => OMNlifecycle.hasRole, :type => RDF::XSD.string
+    property :hasSliverID, :predicate => OMNlifecycle.hasSliverID, :type => RDF::XSD.string
+    property :hasSliverName, :predicate => OMNlifecycle.hasSliverName, :type => RDF::XSD.string
+    property :hasSliceID, :predicate => OMNlifecycle.hasSliceID, :type => RDF::XSD.string
     property :weight, :predicate => SAMANTuxv.weight, :type => RDF::XSD.double
     property :mtoWeight, :predicate => SAMANTuxv.mtoWeight, :type => RDF::XSD.double
     property :length, :predicate => SAMANTuxv.length, :type => RDF::XSD.double
@@ -266,11 +268,12 @@ module SAMANT
     has_many :isReservationOf, :predicate => SAMANTuxv.isReservationOf, :type => :UxV
     property :hasReservationState, :predicate => OMNlifecycle.hasReservationState, :type => :ReservationState
     # Data Properties
-    property :hasID, :predicate => OMNlifecycle.hasID, :type => String
+    property :hasID, :predicate => OMNlifecycle.hasID, :type => RDF::XSD.string
+    property :clientID, :predicate => SAMANTuxv.clientID, :type => RDF::XSD.string
     property :startTime, :predicate => OMNlifecycle.startTime, :type => RDF::XSD.dateTime
     property :expirationTime, :predicate => OMNlifecycle.expirationTime, :type => RDF::XSD.dateTime
-    property :hasStatusMessage, :predicate => SAMANTuxv.hasStatusMessage, :type => String
-    property :hasSliceID, :predicate => OMNlifecycle.hasSliceID, :type => String
+    property :hasStatusMessage, :predicate => SAMANTuxv.hasStatusMessage, :type => RDF::XSD.string
+    property :hasSliceID, :predicate => OMNlifecycle.hasSliceID, :type => RDF::XSD.string
   end
 
   class Unallocated < ReservationState # SFA -> Past / RAWFIE -> Released
@@ -382,20 +385,20 @@ module SAMANT
     has_many :hasResource, :predicate => SAMANTuxv.hasResource, :type => :UxV
     # Data Properties
     property :hasID, :predicate => SAMANTuxv.hasID, :type => RDF::XSD.string
-    property :hasName, :predicate => SAMANTuxv.hasName, :type => String
-    property :hasDescription, :predicate => SAMANTuxv.hasDescription, :type => String
-    property :hasTestbedID, :predicate => SAMANTuxv.hasTestbedID, :type => String
-    property :hasUavSupport, :predicate => SAMANTuxv.hasUavSupport, :type => Boolean
-    property :hasUgvSupport, :predicate => SAMANTuxv.hasUgvSupport, :type => Boolean
-    property :hasUsvSupport, :predicate => SAMANTuxv.hasUsvSupport, :type => Boolean
-    property :hasStatusMessage, :predicate => SAMANTuxv.hasStatusMessage, :type => String
+    property :hasName, :predicate => SAMANTuxv.hasName, :type => RDF::XSD.string
+    property :hasDescription, :predicate => SAMANTuxv.hasDescription, :type => RDF::XSD.string
+    property :hasTestbedID, :predicate => SAMANTuxv.hasTestbedID, :type => RDF::XSD.string
+    property :hasUavSupport, :predicate => SAMANTuxv.hasUavSupport, :type => RDF::XSD.boolean
+    property :hasUgvSupport, :predicate => SAMANTuxv.hasUgvSupport, :type => RDF::XSD.boolean
+    property :hasUsvSupport, :predicate => SAMANTuxv.hasUsvSupport, :type => RDF::XSD.boolean
+    property :hasStatusMessage, :predicate => SAMANTuxv.hasStatusMessage, :type => RDF::XSD.string
   end
 
   class Point < Geometry
     configure :base_uri => GML.Point
     type RDF::URI.new("http://www.opengis.net/gml/Point")
     # Data Properties
-    property :pos, :predicate => GML.pos, :type => String
+    property :pos, :predicate => GML.pos, :type => RDF::XSD.string
   end
 
   class Point3D < Geometry
@@ -418,7 +421,7 @@ module SAMANT
     configure :base_uri => GML.LinearRing
     type RDF::URI.new("http://www.opengis.net/gml/LinearRing")
     # Data Properties
-    has_many :posList, :predicate => GML.posList, :type => String
+    has_many :posList, :predicate => GML.posList, :type => RDF::XSD.string
   end
 
   class GeneralOK < GeneralHealthStatus
