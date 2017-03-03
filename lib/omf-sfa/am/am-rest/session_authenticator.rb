@@ -89,6 +89,7 @@ module OMF::SFA::AM::Rest
       # end
 
       if method == 'GET'
+        debug "Rest Request: " + req.inspect
         req.session[:authorizer] = AMAuthorizer.create_for_rest_request(env['rack.authenticated'], env['rack.peer_cert'], req.params["account"], @opts[:am_manager])
       elsif method == 'OPTIONS'
         #do nothing for OPTIONS  

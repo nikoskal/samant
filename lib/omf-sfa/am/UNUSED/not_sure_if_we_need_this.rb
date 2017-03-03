@@ -89,5 +89,3 @@ exit
   #
 #  rpc 'GetVersion' => :get_version
 #  rpc 'ListResources' => :list_resources
-
-end

@@ -33,6 +33,8 @@ module OMF::SFA::AM::Rest
         opts[:resource_uri] = "status"
       elsif path.map(&:downcase).include? "allocate"
         opts[:resource_uri] = "allocate"
+      elsif path.map(&:downcase).include? "renew"
+        opts[:resource_uri] = "renew"
       else
         raise OMF::SFA::AM::Rest::BadRequestException.new "Invalid URL."
       end
@@ -66,7 +68,13 @@ module OMF::SFA::AM::Rest
     def on_post (method, options)
       if method == "allocate"
         allocate(options)
+      elsif method == "renew"
+        renew(options)
       end
+    end
+
+    def on_delete (method, options)
+
     end
 
     # GetVersion:
@@ -75,7 +83,6 @@ module OMF::SFA::AM::Rest
 
     def get_version()
       # TODO Nothing implemented yet for GetVersion call
-      # debug "NOT YET IMPLEMENTED"
       raise OMF::SFA::AM::Rest::BadRequestException.new "getversion NOT YET IMPLEMENTED"
     end
 
@@ -110,7 +117,7 @@ module OMF::SFA::AM::Rest
         resources = @am_manager.find_all_samant_leases(nil, $acceptable_lease_states, authorizer)
         comps = @am_manager.find_all_samant_components_for_account(nil, authorizer)
         # child nodes should not be included in listresources
-        comps.delete_if {|c| c.to_uri.to_s.include?"/child"}
+        comps.delete_if {|c| c.to_uri.to_s.include?"/leased"}
         if only_available
           debug "only_available selected"
           # TODO maybe delete also interfaces and locations as well
@@ -275,7 +282,7 @@ module OMF::SFA::AM::Rest
       debug "Leases only? " + leases_only.to_s
 
       if resources.nil? || resources.empty? || leases_only
-        debug('CreateSliver failed', "all the requested resources were unavailable for the requested DateTime.")
+        debug('CreateSliver failed', ":all the requested resources were unavailable for the requested DateTime.")
 
         resources.each do |res|
           # TODO logika to check tou PENDING xreiazetai stin periptwsi kata tin opoia to lease proupirxe
@@ -329,6 +336,110 @@ module OMF::SFA::AM::Rest
       @return_struct[:value] = ''
       return ['application/json', JSON.pretty_generate(@return_struct)]
     rescue OMF::SFA::AM::UnavailableResourceException => e
+      @return_struct[:code][:geni_code] = 3
+      @return_struct[:output] = e.to_s
+      @return_struct[:value] = ''
+      return ['application/json', JSON.pretty_generate(@return_struct)]
+    end
+
+    # Provision:
+    # Request that the named geni_allocated slivers be made geni_provisioned,
+    # instantiating or otherwise realizing the resources, such that they have
+    # a valid geni_operational_status and may possibly be made geni_ready for
+    # experimenter use. This operation is synchronous, but may start a longer process.
+
+    def provision()
+      # TODO Nothing implemented yet for Provision call
+      raise OMF::SFA::AM::Rest::BadRequestException.new "Provision NOT YET IMPLEMENTED"
+    end
+
+    # Renew:
+    # Request that the named slivers be renewed, with their expiration
+    # extended. If possible, the aggregate should extend the slivers to
+    # the requested expiration time, or to a sooner time if policy limits
+    # apply. This method applies to slivers that are geni_allocated or to
+    # slivers that are geni_provisioned, though different policies may apply
+    # to slivers in the different states, resulting in much shorter max
+    # expiration times for geni_allocated slivers.
+
+    def renew(options)
+      body, format = parse_body(options)
+      params = body[:options]
+      #debug "Body & Format = ", opts.inspect + ", " + format.inspect
+      urns = params[:urns]
+      expiration_time = params[:expiration_time]
+
+      debug('Renew: URNs: ', urns.inspect, ' until <', expiration_time, '>')
+
+      if urns.nil? || urns.empty? || expiration_time.nil?
+        @return_struct[:code][:geni_code] = 1 # Bad Arguments
+        @return_struct[:output] = "Some of the following arguments are missing: 'slice_urn', 'expiration_time'"
+        @return_struct[:value] = ''
+        return @return_struct
+      end
+
+      expiration_time = Time.parse(expiration_time).utc
+
+      slice_urn, slivers_only, error_code, error_msg = parse_samant_urns(urns)
+      if error_code != 0
+        @return_struct[:code][:geni_code] = error_code
+        @return_struct[:output] = error_msg
+        @return_struct[:value] = ''
+        return @return_struct
+      end
+
+      debug('Renew ', slice_urn, ' until <', expiration_time, '>')
+
+      authorizer = options[:req].session[:authorizer]
+
+      leases = []
+      if slivers_only
+        urns.each do |urn|
+          l = @am_manager.find_samant_lease(urn, authorizer) # TODO maybe check thoroughly if slice_urn of slivers is the same as the authenticated user's
+          leases << l
+        end
+      else
+        leases = @am_manager.find_all_samant_leases(slice_urn, $acceptable_lease_states, authorizer)
+      end
+
+      if leases.nil? || leases.empty?
+        @return_struct[:code][:geni_code] = 1 # Bad Arguments
+        @return_struct[:output] = "There are no slivers for slice: '#{slice_urn}'."
+        @return_struct[:value] = ''
+        return ['application/json', JSON.pretty_generate(@return_struct)]
+      end
+
+      # TODO: check account/slice renew concept. Is it necessary?
+
+      value = {}
+      value[:geni_urn] = slice_urn
+      value[:geni_slivers] = []
+      leases.each do |lease|
+        lease_properties = {:expirationTime => expiration_time}
+        @am_manager.modify_samant_lease(lease_properties, lease, authorizer)
+        # TODO not sure if must-do
+        #@am_manager.scheduler.update_samant_lease_events_on_event_scheduler(lease)
+        tmp = {}
+        tmp[:geni_sliver_urn]         = lease.to_uri.to_s
+        tmp[:geni_expires]            = lease.expirationTime.to_s
+        tmp[:geni_allocation_status]  = if lease.hasReservationState.uri == SAMANT::ALLOCATED.uri then "geni_allocated"
+                                        elsif lease.hasReservationState == SAMANT::PROVISIONED then "geni_provisioned"
+                                        else "geni_unallocated"
+                                        end
+        tmp[:geni_operational_status] = "NO_INFO" # lease.isReservationOf.hasResourceStatus.to_s # TODO Match geni_operational_status with an ontology concept
+        value[:geni_slivers] << tmp
+      end
+
+      @return_struct[:code][:geni_code] = 0
+      @return_struct[:value] = value
+      @return_struct[:output] = ''
+      return ['application/json', JSON.pretty_generate(@return_struct)]
+    rescue OMF::SFA::AM::UnavailableResourceException => e
+      @return_struct[:code][:geni_code] = 12 # Search Failed
+      @return_struct[:output] = e.to_s
+      @return_struct[:value] = ''
+      return ['application/json', JSON.pretty_generate(@return_struct)]
+    rescue OMF::SFA::AM::InsufficientPrivilegesException => e
       @return_struct[:code][:geni_code] = 3
       @return_struct[:output] = e.to_s
       @return_struct[:value] = ''

@@ -76,15 +76,18 @@ module OMF::SFA::AM
       debug "type + res descr = " + type_to_create.inspect + " " + desc.inspect
       debug "PATERAS = " + parent.inspect
 
-      #if parent.nil? || !parent.isAvailable
-      if parent.nil? || !parent.hasLease.nil?
+      if parent.nil? || parent.hasResourceStatus == SAMANT::BOOKED
         raise UnknownResourceException.new "Resource '#{resource_descr.inspect}' is not available or doesn't exist"
       end
 
-      child = parent.copy(RDF::URI.new(parent.uri.to_s+"/child"))
+      # TODO maybe replace timestamp
+      timestamp = Time.now.to_i.to_s
+      child = parent.copy(RDF::URI.new(parent.uri.to_s+"/leased@"+timestamp))
+      child.hasChild = nil
       child.hasSliceID = resource_descr[:hasSliceID]
       child.hasComponentID = nil # unkown spira custom types (anyURI) fix
-      child.hasComponentID = parent.hasComponentID.to_s
+      #child.hasComponentID = parent.hasComponentID.to_s
+      child.hasComponentID = child.to_uri.to_s
       child.hasResourceStatus = SAMANT::BOOKED
       child.hasParent = parent
       child.save
@@ -95,9 +98,9 @@ module OMF::SFA::AM
       debug "Paidi uri " + child.inspect
       debug "PAIDI slice " + child.hasSliceID
       debug "PAIDI resource status " + child.hasResourceStatus.inspect
-      debug "exei paidi to paidi? " + (!child.hasChild.nil?).to_s #bug check
+      debug "exei paidi to paidi? " + (!child.hasChild.nil?).to_s # bug check
 
-      parent.hasChild = child # TODO MPOREI NA XREIASTEI PERSISTANCE
+      parent.hasChild << child # TODO MPOREI NA XREIASTEI PERSISTANCE
       parent.save!
       child
     end
@@ -145,14 +148,20 @@ module OMF::SFA::AM
 
     def release_samant_resource(resource)
       debug "release_samant_resource: resource -> '#{resource.inspect}'"
-      unless resource.is_a? SAMANT::UxV
-        raise "Expected Node but got '#{resource.inspect}'"
+      if resource.is_a? SAMANT::UxV
+        # raise "Expected Node but got '#{resource.inspect}'"
+        #debug "Prin yparxei = " + Semantic::Node.for(:node1).hasSliceID.inspect
+        resource.hasComponentID = nil # bug temporary fix
+        resource.save
+        resource.hasParent.hasChild.delete_if {|c| c.to_uri == resource.to_uri} if resource.hasParent # deletes the record entirely (wanted)
+        resource = resource.destroy
+        #debug "Meta den yparxei = " + Semantic::Node.for(:node1).hasSliceID.inspect
+      elsif resource.is_a? SAMANT::Lease
+        resource = delete_samant_lease(resource)
+      else
+        raise "Unexpected resource: '#{resource.inspect}'"
       end
-      #debug "Prin yparxei = " + Semantic::Node.for(:node1).hasSliceID.inspect
-      resource.hasComponentID = nil
-      resource = resource.destroy
-      resource.hasParent.hasChild = nil if resource.hasParent # deletes the record entirely (wanted)
-      #debug "Meta den yparxei = " + Semantic::Node.for(:node1).hasSliceID.inspect
+
       raise "Failed to destroy resource" unless resource
       resource
     end
@@ -184,20 +193,18 @@ module OMF::SFA::AM
       unless lease.is_a? SAMANT::Lease
         raise "Expected Lease but got '#{lease.inspect}'"
       end
-
       debug "exei prin paidia? " + lease.isReservationOf.inspect
-
-      # TODO MASSIVE: thelei ftiaksimo, giati elegxei to id tou parent??
+      # TODO check if lease is actually deleted from the component's .hasLease
       lease.isReservationOf.each do |c|
         #c = Semantic::Node.for(:node1)
         debug "component " + c.inspect
         debug "component " + c.hasInterface.inspect
         #debug "component " + c.hasParent.inspect
         c.destroy unless c.hasParent.nil? #c.hasParent.resourceId.nil? # Destroy all the children and leave the parent intact
+        debug "einai pinakas h hasLease?" + c.hasLease.is_a?(Array).to_s
+        c.hasLease.delete_if{|l| l == lease}
       end
-
       #debug "exei meta paidia? " + Semantic::Node.for(:node1).hasInterface.inspect
-
       lease.expirationTime <= Time.now ? lease.hasReservationState = SAMANT::UNALLOCATED : lease.hasReservationState = SAMANT::CANCELLED
       l = lease.save
       delete_samant_lease_events_from_event_scheduler(lease) if l
@@ -230,17 +237,13 @@ module OMF::SFA::AM
         raise "Expected Lease but got '#{lease.inspect}'"
       end
 
-      #debug "exei prin paidia? " + lease.isReservationOf.inspect
-
-      #TODO MASSIVE: thelei ftiaksimo, giati elegxei to id tou parent?
       lease.isReservationOf.each do |c|
         #debug "component " + c.inspect
         #debug "component " + c.hasInterface.inspect
         #debug "component " + c.parent.inspect
-        c.destroy unless c.parent.hasID.nil? # Destroy all the children and leave the parent intact
+        c.destroy unless c.hasParent.nil? # Destroy all the children and leave the parent intact
+        c.hasLease.delete_if{|l| l == lease}
       end
-
-      #debug "exei meta paidia? " + Semantic::Node.for(:node1).hasInterface.inspect
 
       lease.destroy
       true
@@ -278,17 +281,15 @@ module OMF::SFA::AM
     def lease_samant_component(lease, component)
       debug "lease_component: lease:'#{lease.to_uri}' to component:'#{component.to_uri}'"
       parent = component.hasParent
-      # TODO MASSIVE -> prepei na ginei douleia me policies # return false unless @@am_policies.valid?(lease, component)
       debug "parent = " + parent.to_uri
       if samant_component_available?(component, lease.startTime, lease.expirationTime)
         time = Time.now
-        #lease.hasState = time > lease.startTime ? Semantic::State.for(:Past) : time <= lease.expirationTime && time >= lease.startTime ? Semantic::State.for(:Active) : Semantic::State.for(:Success)
         lease.hasReservationState = time > lease.expirationTime ? SAMANT::CANCELLED : time <= lease.expirationTime && time >= lease.startTime ? SAMANT::PROVISIONED : SAMANT::ALLOCATED
         debug "Lease State = " + lease.hasReservationState.inspect
-        parent.hasLease = lease
-        parent.hasResourceStatus = SAMANT::BOOKED
-        component.hasLease = lease
-        lease.isReservationOf = parent
+        parent.hasLease << lease
+        # TODO check if sane tactic. Children should only have one lease attached
+        component.hasLease = [] << lease
+        lease.isReservationOf << parent
         lease.save
         parent.save
         component.save
@@ -319,17 +320,27 @@ module OMF::SFA::AM
     def samant_component_available?(component, start_time, end_time)
       #return component.isAvailable unless component.isExclusive
       #return false unless component.isAvailable
+      # check if UxV exists, not sure if necessary
       sparql = SPARQL::Client.new($repository)
       return false unless sparql.ask.whether([component.to_uri, :p, :o]).true?
-      return  false if component.hasLease
+      #return  false if component.hasLease
+      # TODO check if resource status is unavailable
       return true if SAMANT::Lease.count == 0
       debug "No. of Leases = " + SAMANT::Lease.count.to_s
-      parent = component.hasSliceID == get_nil_account().urn ? component : component.hasParent
-      #debug "Topikos parent = " + parent.inspect + " " + parent.hasSliceID
+      # TODO  not sure why
+      parent = component.hasParent #hasSliceID == get_nil_account().urn ? component : component.hasParent
+      # debug "MPOUMPIS MIKROS = " + component.to_uri.to_s
+      # debug "NTANTIS = " + parent.to_uri.to_s
+      # debug "Topikos parent = " + parent.inspect + " " + parent.hasSliceID
       # Assume that Accepted & Active states is Allocated & Provisioned respectively
-      leases = SAMANT::Lease.find(:all, :conditions => { :isReservationOf => parent.uri } )
-                   .select{|lease| (lease.hasReservationState == SAMANT::ALLOCATED || lease.hasReservationState == SAMANT::PROVISIONED)}
-                    .select{|lease| ((lease.startTime > start_time) && (lease.expirationTime < end_time)) || ((lease.startTime < start_time) && (lease.expirationTime > start_time)) }
+      # TODO not sure if it covers all the possible lease overlaps
+      leases = SAMANT::Lease.find(:all, :conditions => { :isReservationOf => parent.to_uri } )
+                   .select{|lease| (lease.hasReservationState.to_uri == SAMANT::ALLOCATED.to_uri || lease.hasReservationState.to_uri == SAMANT::PROVISIONED.to_uri)}
+                    .select{|lease| ((lease.startTime >= start_time) && (lease.expirationTime < end_time)) || ((lease.startTime <= start_time) && (lease.expirationTime > start_time)) }
+      #debug "Reservation State autou pou vrika: " + leases.first.hasReservationState.inspect
+      #debug "poio lease einai? " + leases.first.inspect + leases.first.clientID
+      #debug "Allocated urn" + SAMANT::ALLOCATED.inspect
+      #debug "Is it allocated? " + (leases.first.hasReservationState.kind_of? SAMANT::ALLOCATED).to_s
       #debug "Lease yparxei allo? " + (!(leases.nil? || leases.empty?)).to_s + " " + leases.inspect
       #debug "Start times = " + leases.first.startTime.to_s + ", " + start_time.to_s + " mikrotero? " + (leases.first.startTime < start_time).to_s
       leases.nil? || leases.empty?
@@ -469,8 +480,11 @@ module OMF::SFA::AM
           debug "Is it String? " + l_uuid.kind_of?(String).to_s
           lease = SAMANT::Lease.find(:all, :conditions => { :hasID => l_uuid} )
           break if lease.nil?
-          lease.hasReservationState = SAMANT::ALLOCATED
+          lease.hasReservationState = SAMANT::PROVISIONED
           lease.save
+          # TODO thelei ftiaksimo, o pateras edw prepei na ginetai booked kai na tou anatithetai to sliceID
+          # parent.hasResourceStatus = SAMANT::BOOKED
+          # parent.hasSliceID = ....
           debug "Lease found; Reservation State = " + lease.hasReservationState.inspect
           #@liaison.on_lease_start(lease) # Not Implemented
         end
@@ -480,6 +494,9 @@ module OMF::SFA::AM
         lease =  SAMANT::Lease.find(:all, :conditions => { :hasID => l_uuid} )
         lease.hasReservationState = SAMANT::UNALLOCATED # TODO kati kalytero gia past
         lease.save
+        # TODO thelei ftiaksimo, o pateras edw prepei na eleutherwnetai kai na tou diagrafetai to slice ID
+        # parent.hasResourceStatus = SAMANT::RELEASED
+        # parent.hasSliceID = nil
         #@liaison.on_lease_end(lease) # Not Implemented
       end
     end

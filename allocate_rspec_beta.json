@@ -9,18 +9,25 @@
     "type": "request",
     "leases": [
       {
-        "client_id": "l2",
-        "valid_from": "2017-3-2T19:00:00Z",
-        "valid_until": "2017-3-2T20:00:00Z"
+        "client_id": "test_lease",
+        "valid_from": "2017-3-4T19:00:00Z",
+        "valid_until": "2017-3-4T20:00:00Z"
       }
     ],
     "nodes": [
       {
-        "component_id": "urn:publicid:IDN+samant+uav+flexus1",
-        "component_manager_id": "urn:publicid:IDN+omf:netmode+node+UaV1",
-        "component_name": "UaV1",
+        "component_id": "urn:publicid:IDN+samant+auv+altus2",
+        "component_manager_id": "urn:publicid:IDN+netmode+node+UaV1",
+        "component_name": "AuV_ALTUS2",
         "exclusive": true,
-        "lease_ref": "l2"
+        "lease_ref": "test_lease"
+      },
+      {
+        "component_id": "urn:publicid:IDN+samant+auv+altus3",
+        "component_manager_id": "urn:publicid:IDN+netmode+node+UgV1",
+        "component_name": "AuV_ALTUS3",
+        "exclusive": true,
+        "lease_ref": "test_lease"
       }
     ]
   }

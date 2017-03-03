@@ -254,7 +254,7 @@ uav1.hasConfigParameters = uav1ConfigParameters
 uav1.hasHealthInformation = uav1HealthInformation
 uav1.hasUxVType = SAMANT::UAV
 uav1.hasSensorSystem = auv1MultiSensor
-uav1.hasLease = uav1Lease
+uav1.hasLease << uav1Lease
 uav1.resourceId = "UaV1_FLEXUS"
 uav1.hasName = "UaV1"
 uav1.hasStatusMessage = "UaVsaysHello"
@@ -281,7 +281,7 @@ ugv1.hasConfigParameters = ugv1ConfigParameters
 ugv1.hasHealthInformation = ugv1HealthInformation
 ugv1.hasUxVType = SAMANT::UGV
 ugv1.hasSensorSystem = auv1MultiSensor
-ugv1.hasLease = ugv1Lease
+ugv1.hasLease << ugv1Lease
 ugv1.resourceId = "UgV1_VENAC"
 ugv1.hasName = "UgV1"
 ugv1.hasStatusMessage = "UgVsaysHello"
@@ -308,7 +308,7 @@ auv1.hasConfigParameters = auv1ConfigParameters
 auv1.hasHealthInformation = auv1HealthInformation
 auv1.hasUxVType = SAMANT::AUV
 auv1.hasSensorSystem = auv1MultiSensor
-auv1.hasLease = auv1Lease
+auv1.hasLease << auv1Lease
 auv1.resourceId = "AuV1_ALTUS"
 auv1.hasName = "AuV1"
 auv1.hasStatusMessage = "AuVsaysHello"

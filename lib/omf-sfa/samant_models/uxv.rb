@@ -20,6 +20,10 @@ module SAMANT
 
   ##### CLASSES #####
 
+  class Slice < Spira::Base
+
+  end
+
   class Geometry < Spira::Base
     configure :base_uri => GML._Geometry
     type RDF::URI.new("http://www.opengis.net/gml/_Geometry")
@@ -143,10 +147,10 @@ module SAMANT
     configure :base_uri => FOAF.Person
     type RDF::URI.new("http://xmlns.com/foaf/0.1/Person")
     # Object Properties
-    property :hasID, :predicate => SAMANTuxv.hasID, :type => RDF::XSD.string
     has_many :hasUserSettings, :predicate => SAMANTuxv.hasUserSettings, :type => :UserSettings
     has_many :usesTestbed, :predicate => SAMANTuxv.usesTestbed, :type => :Testbed
     # Data Properties
+    property :hasID, :predicate => SAMANTuxv.hasID, :type => RDF::XSD.string
     property :hasEmail, :predicate => SAMANTuxv.hasEmail, :type => RDF::XSD.string
     property :hasFirstName, :predicate => SAMANTuxv.hasFirstName, :type => RDF::XSD.string
     property :hasSurname, :predicate => SAMANTuxv.hasSurname, :type => RDF::XSD.string
@@ -226,14 +230,15 @@ module SAMANT
     property :hasHealthInformation, :predicate => SAMANTuxv.hasHealthInformation, :type => :HealthInformation
     property :isResourceOf, :predicate => SAMANTuxv.isResourceOf, :type => :Testbed
     property :hasUxVType, :predicate => SAMANTuxv.hasUxVType, :type => :UxVType
-    property :hasLease, :predicate => OMNlifecycle.hasLease, :type => :Lease
     property :hasReservation, :predicate => OMNlifecycle.hasReservation, :type => :Reservation
     property :hasConfigParameters, :predicate => SAMANTuxv.hasConfigParameters, :type => :ConfigParameters
     property :hasSensorSystem, :predicate => SAMANTsensor.hasSensorSystem, :type => :System
-    property :hasChild, :predicate => SAMANTuxv.hasChild, :type => :UxV
     property :hasParent, :predicate => SAMANTuxv.hasParent, :type => :UxV
+    has_many :hasChild, :predicate => SAMANTuxv.hasChild, :type => :UxV
     has_many :hasInterface, :predicate => OMNresource.hasInterface, :type => :Interface
     has_many :where, :predicate => GEO.where, :type => :Geometry
+    has_many :hasLease, :predicate => OMNlifecycle.hasLease, :type => :Lease
+
 
     # Data Properties
     property :resourceId, :predicate => OMNlifecycle.resourceId, :type => RDF::XSD.string
@@ -261,6 +266,7 @@ module SAMANT
   end
 
   class Lease < Reservation
+    # Sliver
     # Imported from omn-lifecycle:Lease
     configure :base_uri => OMNlifecycle.Lease
     type RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#Lease")

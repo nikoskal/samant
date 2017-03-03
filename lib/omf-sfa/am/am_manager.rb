@@ -359,9 +359,6 @@ module OMF::SFA::AM
     def find_all_samant_leases(account_urn = nil, state = [SAMANT::ALLOCATED, SAMANT::PROVISIONED, SAMANT::UNALLOCATED, SAMANT::CANCELLED, SAMANT::PENDING], authorizer)
       debug "find_all_samant_leases: account: #{authorizer.account.inspect} status: #{state.inspect}"
       debug "authorizer urn = " + authorizer.account[:urn].inspect
-      #if state == "acceptable"
-      #  state = [SAMANT::ALLOCATED, SAMANT::PROVISIONED, SAMANT::PENDING]
-      #end
       if account_urn.nil?
         if state.kind_of?(Array)
           leases = []
@@ -876,7 +873,7 @@ module OMF::SFA::AM
     def release_samant_resource(resource, authorizer)
       debug "release_samant_resource: '#{resource.inspect}'"
       raise InsufficientPrivilegesException unless authorizer.can_release_samant_resource?(resource)
-      @scheduler.release_samant_resource(resource) # datamapper -> resource -> destroy
+      @scheduler.release_samant_resource(resource)
     end
 
     # Release an array of resources.
@@ -892,7 +889,7 @@ module OMF::SFA::AM
     def release_samant_resources(resources, authorizer)
       resources.each do |r|
         # release only samant uxvs
-        release_samant_resource(r, authorizer) if r.kind_of? SAMANT::UxV
+        release_samant_resource(r, authorizer) if ((r.kind_of?SAMANT::UxV) || (r.kind_of?SAMANT::Lease))
       end
     end
 
@@ -1083,14 +1080,14 @@ module OMF::SFA::AM
         nodes = []
         if descr_el.key?(:nodes)
           node_els = descr_el[:nodes]
-          debug "EXEI NODES = " + node_els.inspect
+          debug "The following UxVs found: " + node_els.inspect
           node_els.each { |node_el|
             nodes << update_samant_resource_from_rspec(node_el, resources, clean_state, authorizer) # at this stage resources == leases
           }
         else
           nodes
         end
-        debug "nodes contain: " + nodes.compact.inspect # compact removes nil values
+        debug "Returned UxVs contain: " + nodes.compact.inspect # compact removes nil values
         resources = resources.concat(nodes.compact)
         debug "accumulated contain: " + resources.inspect
         # raise OMF::SFA::AM::UnavailableResourceException.new "BREAKPOINT"
@@ -1130,10 +1127,13 @@ module OMF::SFA::AM
           failed_resources.each do |fres|
             # puts
             release_samant_resource(fres[:failed], authorizer)
-            urns << fres[:failed].to_uri
+            urns << fres[:failed].hasParent.to_uri.to_s
           end
+          # TODO 1.check an prepei na gyrisw nil, 2.prepei na kanw raise to unavailable exception?
+          #  Allocate is an all or nothing request: if the aggregate cannot completely satisfy the request RSpec, it should fail the request entirely.
           release_samant_resources(resources, authorizer)
-          raise UnavailableResourceException.new "The resources with the following URNs: '#{urns.inspect}' failed to be allocated"
+          #return resources
+          raise UnavailableResourceException.new "The resources with the following URNs: '#{urns.inspect}' failed to be allocated. Request dropped."
         end
 
 
