@@ -198,6 +198,11 @@ module OMF::SFA::AM
       account
     end
 
+    def close_samant_account(slice_descr, authorizer)
+      # TODO A LOT OF WORK ON THIS CONCEPT
+      release_all_samant_leases_for_account(slice_descr, authorizer)
+    end
+
     ### USERS
 
     # Return the user described by +user_descr+. Create if it doesn't exist.
@@ -448,6 +453,12 @@ module OMF::SFA::AM
       end
     end
 
+    def release_samant_leases(leases, authorizer)
+      leases.each do |l|
+        release_samant_lease(l, authorizer)
+      end
+    end
+
     # This method finds all the leases of the specific account and
     # releases them.
     #
@@ -457,6 +468,11 @@ module OMF::SFA::AM
     def release_all_leases_for_account(account, authorizer)
       leases = find_all_leases(account, ['accepted', 'active'], authorizer) # ola ta leases tou do8entos account
       release_leases(leases, authorizer)
+    end
+
+    def release_all_samant_leases_for_account(slice_urn, authorizer)
+      leases = find_all_samant_leases(slice_urn, [SAMANT::ALLOCATED, SAMANT::PROVISIONED], authorizer)# ola ta leases tou do8entos account
+      release_samant_leases(leases, authorizer)
     end
 
 
@@ -505,7 +521,7 @@ module OMF::SFA::AM
       if resource_descr.kind_of? Hash
         #resource_descr = resource_descr.except(:comp_id)
         #resource = eval("SAMANT::#{resource_type.camelize}").find(:all, :conditions => resource_descr).first
-        resource = SAMANT::UxV.find(:all, :conditions => resource_descr).first
+        resource = SAMANT::Uxv.find(:all, :conditions => resource_descr).first
         #uxv_urn = RDF::URI.new(resource_descr[:comp_id])
         #sparql = SPARQL::Client.new($repository)
         unless resource
@@ -697,10 +713,10 @@ module OMF::SFA::AM
       snr = []
       lct = []
       if account_urn.nil?
-        res << SAMANT::UxV.find(:all)
+        res << SAMANT::Uxv.find(:all)
       else
         raise InsufficientPrivilegesException unless account_urn == authorizer.account[:urn]
-        res << SAMANT::UxV.find(:all, :conditions => {:hasSliceID => authorizer.account[:urn]})
+        res << SAMANT::Uxv.find(:all, :conditions => {:hasSliceID => authorizer.account[:urn]})
       end
       res.flatten!
       res.map do |r|
@@ -721,6 +737,27 @@ module OMF::SFA::AM
       #debug "@@@@@Locations: " + lct.inspect
       res << ifr << lct
       res.flatten!
+    end
+
+    def find_all_samant_resources(category = nil)
+      av_classes = SAMANT.constants.select {|c| SAMANT.const_get(c).is_a? Class}
+      debug "Available Classes = " + av_classes.inspect
+      resources = []
+      if category.nil?
+        av_classes.each do |av_class|
+          resources << eval("SAMANT::#{av_class}").find(:all)
+        end
+      else
+        category.each do |cat_class|
+          cat_class = cat_class.classify
+          unless av_classes.include?(cat_class.to_sym)
+            raise UnavailableResourceException.new "Unknown Resource Category '#{cat_class.inspect}'. Please choose one of the following '#{av_classes.inspect}'"
+          end
+          resources << eval("SAMANT::#{cat_class}").find(:all)
+        end
+      end
+      resources.flatten!
+      #debug "returned resources: " + resources.inspect
     end
 
     # Find all components
@@ -889,7 +926,7 @@ module OMF::SFA::AM
     def release_samant_resources(resources, authorizer)
       resources.each do |r|
         # release only samant uxvs
-        release_samant_resource(r, authorizer) if ((r.kind_of?SAMANT::UxV) || (r.kind_of?SAMANT::Lease))
+        release_samant_resource(r, authorizer) if ((r.kind_of?SAMANT::Uxv) || (r.kind_of? SAMANT::Lease))
       end
     end
 
@@ -1447,5 +1484,34 @@ module OMF::SFA::AM
         # raise OMF::SFA::AM::Rest::BadRequestException.new "UPDATE LEASES NOT YET IMPLEMENTED"
       end
     end
+
+    def renew_samant_lease(lease, leased_components, authorizer, new_expiration_time)
+      debug "Checking Lease (prior): " + lease.expirationTime.inspect
+      unless new_expiration_time > lease.expirationTime
+        raise OMF::SFA::AM::UnavailableResourceException.new "New Expiration Time cannot be prior to former Expiration Time."
+      end
+      old_lease_properties = {:startTime => lease.startTime, :expirationTime => lease.expirationTime}
+      new_lease_properties = {:startTime => lease.startTime, :expirationTime => new_expiration_time}
+      # check only during the difference
+      lease.startTime = lease.expirationTime + 1.second
+      lease.expirationTime = new_expiration_time
+      debug "Checking Lease (updated): from " + lease.startTime.inspect + " to " + lease.expirationTime.inspect
+      renewal_success = true
+      leased_components.each do |component|
+        unless @scheduler.lease_samant_component(lease, component)
+          debug "One Fail!"
+          renewal_success = false
+          break
+        end
+      end
+      debug "Checking Lease (updated): " + lease.expirationTime.inspect
+      unless renewal_success
+        modify_samant_lease(old_lease_properties, lease, authorizer)
+        debug "Checking Lease (cancelling): " + lease.expirationTime.inspect
+        raise OMF::SFA::AM::UnavailableResourceException.new "Could not renew sliver due to unavailability of resources during that time."
+      end
+      modify_samant_lease(new_lease_properties, lease, authorizer) # also updates the event scheduler
+    end
+
   end # class
 end # OMF::SFA::AM

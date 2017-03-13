@@ -1,0 +1,14 @@
+{
+  "resources": {
+    "name": "netmode1",
+    "type": "uxv",
+    "authority": "samant",
+    "resource_description": {
+      "hasComponentID": "urn:publicid:IDN+samant+uxv+netmode1",
+      "hasSliceID": "urn:publicid:IDN+omf:netmode+account+__default__",
+      "resourceId": "UaV_NETMODE1",
+      "hasInterface": ["urn:publicid:IDN+samant+wired_interface+uav1:eth0", "urn:publicid:IDN+samant+wireless_interface+uav1:wlan0"],
+      "hasUxVType": "http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#UaV/"
+    }
+  }
+}

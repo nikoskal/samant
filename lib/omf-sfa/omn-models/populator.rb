@@ -31,7 +31,7 @@ uav1Point3D.lat = 5.5701e1
 uav1Point3D.long = 1.2552e1
 uav1Point3D.save
 
-uav1 = SAMANT::UxV.for('urn:publicid:IDN+samant+uav+flexus1'.to_sym)
+uav1 = SAMANT::Uxv.for('urn:publicid:IDN+samant+uav+flexus1'.to_sym)
 uav1.hasComponentID = 'urn:publicid:IDN+samant+uav+flexus1'
 uav1.hasResourceStatus = SAMANT::RELEASED
 uav1.hasSliceID = 'urn:publicid:IDN+omf:netmode+account+__default__'
@@ -60,7 +60,7 @@ auv1Point3D.lat = 2.1701e1
 auv1Point3D.long = 9.355200000000001e1
 auv1Point3D.save
 
-auv1 = SAMANT::UxV.for('urn:publicid:IDN+samant+auv+altus1'.to_sym)
+auv1 = SAMANT::Uxv.for('urn:publicid:IDN+samant+auv+altus1'.to_sym)
 auv1.hasComponentID = 'urn:publicid:IDN+samant+auv+altus1'
 auv1.hasResourceStatus = SAMANT::RELEASED
 auv1.hasSliceID = 'urn:publicid:IDN+omf:netmode+account+__default__'
@@ -89,7 +89,7 @@ auv2Point3D.lat = 3.1701e1
 auv2Point3D.long = 10.355200000000001e1
 auv2Point3D.save
 
-auv2 = SAMANT::UxV.for('urn:publicid:IDN+samant+auv+altus2'.to_sym)
+auv2 = SAMANT::Uxv.for('urn:publicid:IDN+samant+auv+altus2'.to_sym)
 auv2.hasComponentID = 'urn:publicid:IDN+samant+auv+altus2'
 auv2.hasResourceStatus = SAMANT::RELEASED
 auv2.hasSliceID = 'urn:publicid:IDN+omf:netmode+account+__default__'
@@ -118,7 +118,7 @@ auv3Point3D.lat = 4.1701e1
 auv3Point3D.long = 11.355200000000001e1
 auv3Point3D.save
 
-auv3 = SAMANT::UxV.for('urn:publicid:IDN+samant+auv+altus3'.to_sym)
+auv3 = SAMANT::Uxv.for('urn:publicid:IDN+samant+auv+altus3'.to_sym)
 auv3.hasComponentID = 'urn:publicid:IDN+samant+auv+altus3'
 auv3.hasResourceStatus = SAMANT::RELEASED
 auv3.hasSliceID = 'urn:publicid:IDN+omf:netmode+account+__default__'
@@ -150,7 +150,7 @@ ugv1Point3D.lat = 4.1701e1
 ugv1Point3D.long = 11.355200000000001e1
 ugv1Point3D.save
 
-ugv1 = SAMANT::UxV.for('urn:publicid:IDN+samant+ugv+altus1'.to_sym)
+ugv1 = SAMANT::Uxv.for('urn:publicid:IDN+samant+ugv+altus1'.to_sym)
 ugv1.hasComponentID = 'urn:publicid:IDN+samant+ugv+altus1'
 ugv1.hasResourceStatus = SAMANT::RELEASED
 ugv1.hasSliceID = 'urn:publicid:IDN+omf:netmode+account+__default__'

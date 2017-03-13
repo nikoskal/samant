@@ -70,6 +70,7 @@ module OMF::SFA::AM::RPC::V3
     end
 
     def list_resources(credentials, options)
+      debug 'Credentials: ', credentials.inspect
       debug 'ListResources: Options: ', options.inspect
       
       only_available = options["geni_available"]

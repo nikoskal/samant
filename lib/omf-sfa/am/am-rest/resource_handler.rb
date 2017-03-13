@@ -188,7 +188,7 @@ module OMF::SFA::AM::Rest
     ### self.tade, alliws einai instance method. emeis tin theloume class method
 
     def self.omn_response_json(resource, opts)
-      debug "show_resources_ttl"
+      debug "Generating OMN (json) response"
       #['application/json', resource_to_turtle(resource, opts)]
       query_to_omn_json(resource, opts)
     end
@@ -531,7 +531,7 @@ module OMF::SFA::AM::Rest
 
         ##############
       else
-
+        debug "stoixeia: " + type_to_create.to_s + ", " + descr.inspect
         unless descr.empty?
           if resource = eval("OMF::SFA::Model::#{type_to_create}").first(descr) # prwta ferto, meta kanto update
             authorizer.can_modify_resource?(resource, type_to_create)

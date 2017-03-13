@@ -365,7 +365,7 @@ module OMF::SFA::AM::Rest
       debug "dispatch"
       opts = {}
       populate_opts(req, opts)
-      #puts "OPTS>>>> #{opts.inspect}"
+      #debug "OPTS>>>> #{opts.inspect}"
       method = req.request_method # GET
       target = opts[:target] #|| self
       resource_uri = opts[:resource_uri]

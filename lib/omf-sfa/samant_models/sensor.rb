@@ -60,7 +60,7 @@ module SAMANT
     # Object Properties
     has_many :hasSubSystem, :predicate => SSN.hasSubSystem, :type => :SensingDevice
     has_many :hasSubSystem, :predicate => SSN.hasSubSystem, :type => :System
-    property :isSensorSystemOf, :predicate => SAMANTsensor.isSensorSystemOf, :type => :UxV
+    property :isSensorSystemOf, :predicate => SAMANTsensor.isSensorSystemOf, :type => :Uxv
     # Data Properties
     property :hasVendorName, :predicate => SAMANTsensor.hasVendorName, :type => String
     property :hasProductName, :predicate => SAMANTsensor.hasProductName, :type => String

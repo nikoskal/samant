@@ -69,7 +69,7 @@ module OMF::SFA::AM
       desc[:hasSliceID] = get_nil_account.urn # EDW EXW MEINEI O PARENT PREPEI NA EXEI DEFAULT SLICE ID
       #type = type_to_create.classify
       #parent = eval("SAMANT::#{type_to_create}").find(:all, :conditions => desc).first
-      parent = SAMANT::UxV.find(:all, :conditions => desc).first
+      parent = SAMANT::Uxv.find(:all, :conditions => desc).first
       #puts parent.resourceId
       #auv1 = SAMANT::UxV.for("urn:AuV1".to_sym)
       #debug "Tha eprepe = " + auv1.resourceId.to_s + " " + auv1.hasSliceID.to_s
@@ -148,7 +148,7 @@ module OMF::SFA::AM
 
     def release_samant_resource(resource)
       debug "release_samant_resource: resource -> '#{resource.inspect}'"
-      if resource.is_a? SAMANT::UxV
+      if resource.is_a? SAMANT::Uxv
         # raise "Expected Node but got '#{resource.inspect}'"
         #debug "Prin yparxei = " + Semantic::Node.for(:node1).hasSliceID.inspect
         resource.hasComponentID = nil # bug temporary fix
@@ -200,8 +200,19 @@ module OMF::SFA::AM
         debug "component " + c.inspect
         debug "component " + c.hasInterface.inspect
         #debug "component " + c.hasParent.inspect
-        c.destroy unless c.hasParent.nil? #c.hasParent.resourceId.nil? # Destroy all the children and leave the parent intact
-        debug "einai pinakas h hasLease?" + c.hasLease.is_a?(Array).to_s
+        #c.destroy unless c.hasParent.nil? #c.hasParent.resourceId.nil? # Destroy all the children and leave the parent intact
+        #debug "einai pinakas h hasLease?" + c.hasLease.is_a?(Array).to_s
+        c.hasChild.each do |child|
+          #debug "child = " + child.inspect
+          #debug "child hasLease = " + child.hasLease.inspect
+          #debug "lease = " + lease.inspect
+          #debug "will it be destroyed? " + (child.hasLease.include?lease).to_s
+          if child.hasLease.include?lease
+            child.hasComponentID = nil
+            child.save!
+            child.destroy
+          end
+        end
         c.hasLease.delete_if{|l| l == lease}
       end
       #debug "exei meta paidia? " + Semantic::Node.for(:node1).hasInterface.inspect
@@ -241,7 +252,14 @@ module OMF::SFA::AM
         #debug "component " + c.inspect
         #debug "component " + c.hasInterface.inspect
         #debug "component " + c.parent.inspect
-        c.destroy unless c.hasParent.nil? # Destroy all the children and leave the parent intact
+        #c.destroy unless c.hasParent.nil? # Destroy all the children and leave the parent intact
+        c.hasChild.each do |child|
+          if child.hasLease.include?lease
+            child.hasComponentID = nil
+            child.save!
+            child.destroy
+          end
+        end
         c.hasLease.delete_if{|l| l == lease}
       end
 
@@ -286,13 +304,16 @@ module OMF::SFA::AM
         time = Time.now
         lease.hasReservationState = time > lease.expirationTime ? SAMANT::CANCELLED : time <= lease.expirationTime && time >= lease.startTime ? SAMANT::PROVISIONED : SAMANT::ALLOCATED
         debug "Lease State = " + lease.hasReservationState.inspect
-        parent.hasLease << lease
-        # TODO check if sane tactic. Children should only have one lease attached
-        component.hasLease = [] << lease
-        lease.isReservationOf << parent
-        lease.save
-        parent.save
-        component.save
+        unless parent.hasLease.include? lease
+          debug "allocation"
+          parent.hasLease << lease
+          # TODO check if sane tactic. Children should only have one lease attached
+          component.hasLease = [] << lease
+          lease.isReservationOf << parent
+          lease.save
+          parent.save
+          component.save
+        end
         true
       else
         false
@@ -341,7 +362,7 @@ module OMF::SFA::AM
       #debug "poio lease einai? " + leases.first.inspect + leases.first.clientID
       #debug "Allocated urn" + SAMANT::ALLOCATED.inspect
       #debug "Is it allocated? " + (leases.first.hasReservationState.kind_of? SAMANT::ALLOCATED).to_s
-      #debug "Lease yparxei allo? " + (!(leases.nil? || leases.empty?)).to_s + " " + leases.inspect
+      debug "Lease yparxei allo? " + (!(leases.nil? || leases.empty?)).to_s + " " + leases.inspect
       #debug "Start times = " + leases.first.startTime.to_s + ", " + start_time.to_s + " mikrotero? " + (leases.first.startTime < start_time).to_s
       leases.nil? || leases.empty?
     end

@@ -20,10 +20,6 @@ module SAMANT
 
   ##### CLASSES #####
 
-  class Slice < Spira::Base
-
-  end
-
   class Geometry < Spira::Base
     configure :base_uri => GML._Geometry
     type RDF::URI.new("http://www.opengis.net/gml/_Geometry")
@@ -74,7 +70,7 @@ module SAMANT
     type RDF::URI.new("http://open-multinet.info/ontology/omn-resource#Interface")
     # Object Properties
     property :hasComponent, :predicate => OMNresource.hasComponent, :type => :Channel
-    property :isInterfaceOf, :predicate => OMNresource.isInterfaceOf, :type => :UxV
+    property :isInterfaceOf, :predicate => OMNresource.isInterfaceOf, :type => :Uxv
     # Data Properties
     property :hasID, :predicate => OMNlifecycle.hasID, :type => RDF::XSD.string
     property :hasComponentName, :predicate => OMNlifecycle.hasComponentName, :type => RDF::XSD.string
@@ -104,7 +100,7 @@ module SAMANT
     configure :base_uri => SAMANTuxv.HealthStatus
     type RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#HealthStatus")
     # Object Properties
-    property :isHealthStatusOf, :predicate => SAMANTuxv.isHealthStatusOf, :type => :UxV
+    property :isHealthStatusOf, :predicate => SAMANTuxv.isHealthStatusOf, :type => :Uxv
     property :isHealthStatusOf, :predicate => SAMANTuxv.isHealthStatusOf, :type => :TestBed
     property :isHealthStatusOf, :predicate => SAMANTuxv.isHealthStatusOf, :type => :SensingDevice
     property :isHealthStatusOf, :predicate => SAMANTuxv.isHealthStatusOf, :type => :System
@@ -114,7 +110,7 @@ module SAMANT
     configure :base_uri => SAMANTuxv.ResourceStatus
     type RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#ResourceStatus")
     # Object Properties
-    property :isResourceStatusOf, :predicate => SAMANTuxv.isResourceStatusOf, :type => :UxV
+    property :isResourceStatusOf, :predicate => SAMANTuxv.isResourceStatusOf, :type => :Uxv
   end
 
   class UserRole < Spira::Base
@@ -139,7 +135,7 @@ module SAMANT
     configure :base_uri => SAMANTuxv.UxVType
     type RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#UxVType")
     # Object Properties
-    property :isUxVTypeOf, :predicate => SAMANTuxv.isUxVTypeOf, :type => :UxV
+    property :isUxVTypeOf, :predicate => SAMANTuxv.isUxVTypeOf, :type => :Uxv
   end
 
   class Person < Spira::Base
@@ -165,7 +161,7 @@ module SAMANT
     configure :base_uri => SAMANTuxv.ConfigParameters
     type RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#ConfigParameters")
     # Object Properties
-    property :isConfigParametersOf, :predicate => SAMANTuxv.isConfigParametersOf, :type => :UxV
+    property :isConfigParametersOf, :predicate => SAMANTuxv.isConfigParametersOf, :type => :Uxv
     property :hasExperimentResourceConfig, :predicate => SAMANTuxv.hasExperimentResourceConfig, :type => :ExperimentResourceConfig
     # Data Properties
     property :hasID, :predicate => SAMANTuxv.hasID, :type => RDF::XSD.string
@@ -191,7 +187,7 @@ module SAMANT
     configure :base_uri => SAMANTuxv.HealthInformation
     type RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#HealthInformation")
     # Object Properties
-    property :isHealthInformationOf, :predicate => SAMANTuxv.isHealthInformationOf, :type => :UxV
+    property :isHealthInformationOf, :predicate => SAMANTuxv.isHealthInformationOf, :type => :Uxv
     property :isHealthInformationOf, :predicate => SAMANTuxv.isHealthInformationOf, :type => :Testbed
     property :isHealthInformationOf, :predicate => SAMANTuxv.isHealthInformationOf, :type => :SensingDevice
     property :hasGeneralHealthStatus, :predicate => SAMANTuxv.hasGeneralHealthStatus, :type => :GeneralHealthStatus
@@ -221,8 +217,8 @@ module SAMANT
     property :antennaCount, :predicate => OMNwireless.antennaCount, :type => RDF::XSD.integer
   end
 
-  class UxV < Resource
-    configure :base_uri => SAMANTuxv.UxV
+  class Uxv < Resource
+    configure :base_uri => SAMANTuxv.Uxv
     type RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#UxV")
     # Object Properties
     property :hasHealthStatus, :predicate => SAMANTuxv.hasHealthStatus, :type => :HealthStatus
@@ -233,14 +229,15 @@ module SAMANT
     property :hasReservation, :predicate => OMNlifecycle.hasReservation, :type => :Reservation
     property :hasConfigParameters, :predicate => SAMANTuxv.hasConfigParameters, :type => :ConfigParameters
     property :hasSensorSystem, :predicate => SAMANTsensor.hasSensorSystem, :type => :System
-    property :hasParent, :predicate => SAMANTuxv.hasParent, :type => :UxV
-    has_many :hasChild, :predicate => SAMANTuxv.hasChild, :type => :UxV
+    property :hasParent, :predicate => SAMANTuxv.hasParent, :type => :Uxv
+    has_many :hasChild, :predicate => SAMANTuxv.hasChild, :type => :Uxv
     has_many :hasInterface, :predicate => OMNresource.hasInterface, :type => :Interface
     has_many :where, :predicate => GEO.where, :type => :Geometry
     has_many :hasLease, :predicate => OMNlifecycle.hasLease, :type => :Lease
 
 
     # Data Properties
+    property :hasID, :predicate => SAMANTuxv.hasID, :type => RDF::XSD.string #uuid
     property :resourceId, :predicate => OMNlifecycle.resourceId, :type => RDF::XSD.string
     property :clientID, :predicate => SAMANTuxv.clientID, :type => RDF::XSD.string
     property :hasDescription, :predicate => SAMANTuxv.hasDescription, :type => RDF::XSD.string
@@ -271,7 +268,7 @@ module SAMANT
     configure :base_uri => OMNlifecycle.Lease
     type RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#Lease")
     # Object Properties
-    has_many :isReservationOf, :predicate => SAMANTuxv.isReservationOf, :type => :UxV
+    has_many :isReservationOf, :predicate => SAMANTuxv.isReservationOf, :type => :Uxv
     property :hasReservationState, :predicate => OMNlifecycle.hasReservationState, :type => :ReservationState
     # Data Properties
     property :hasID, :predicate => OMNlifecycle.hasID, :type => RDF::XSD.string
@@ -388,7 +385,7 @@ module SAMANT
     property :isTestbedOf, :predicate => SAMANTuxv.isTestbedOf, :type => :Person
     property :hasHealthInformation, :predicate => SAMANTuxv.hasHealthInformation, :type => :HealthInformation
     property :where, :predicate => GEO.where, :type => :Geometry
-    has_many :hasResource, :predicate => SAMANTuxv.hasResource, :type => :UxV
+    has_many :hasResource, :predicate => SAMANTuxv.hasResource, :type => :Uxv
     # Data Properties
     property :hasID, :predicate => SAMANTuxv.hasID, :type => RDF::XSD.string
     property :hasName, :predicate => SAMANTuxv.hasName, :type => RDF::XSD.string
@@ -411,6 +408,7 @@ module SAMANT
     configure :base_uri => SAMANTuxv.Point3D
     type RDF::URI.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#Point3D")
     # Data Properties
+    property :hasID, :predicate => SAMANTuxv.hasID, :type => RDF::XSD.string
     property :lat, :predicate => GEO2003.lat, :type => RDF::XSD.double
     property :alt, :predicate => GEO2003.alt, :type => RDF::XSD.double
     property :long, :predicate => GEO2003.long, :type => RDF::XSD.double

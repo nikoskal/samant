@@ -89,13 +89,15 @@ module OMF::SFA::AM::Rest
       # end
 
       if method == 'GET'
-        debug "Rest Request: " + req.inspect
+        #debug "Rest Request: " + req.inspect
+        debug "GET REST REQUEST"
         req.session[:authorizer] = AMAuthorizer.create_for_rest_request(env['rack.authenticated'], env['rack.peer_cert'], req.params["account"], @opts[:am_manager])
       elsif method == 'OPTIONS'
         #do nothing for OPTIONS  
       elsif env["REQUEST_PATH"] == '/mapper'
         req.session[:authorizer] = AMAuthorizer.create_for_rest_request(env['rack.authenticated'], env['rack.peer_cert'], req.params["account"], @opts[:am_manager])
       else
+        debug "MISC REST REQUEST"
         body = req.body
         raise EmptyBodyException.new if body.nil?
         (body = body.string) if body.is_a? StringIO

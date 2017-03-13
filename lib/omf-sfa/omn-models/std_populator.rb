@@ -245,7 +245,7 @@ ifr3.hasComponentID = "urn:uuid:interface+3+wireless+auv1:ble0"
 ifr3.hasComponentName = "auv1:ble0"
 ifr3.hasRole = "experimental"
 
-uav1 = SAMANT::UxV.for("urn:UaV1".to_sym)
+uav1 = SAMANT::Uxv.for("urn:UaV1".to_sym)
 uav1.hasHealthStatus = SAMANT::SHUTDOWN
 uav1.isResourceOf = uavTestbed
 uav1.hasResourceStatus = SAMANT::BOOKED
@@ -272,7 +272,7 @@ uav1.save
 uavTestbed.hasResource << uav1
 uavTestbed.save
 
-ugv1 = SAMANT::UxV.for("urn:UgV1".to_sym)
+ugv1 = SAMANT::Uxv.for("urn:UgV1".to_sym)
 ugv1.hasHealthStatus = SAMANT::OK
 ugv1.isResourceOf = ugvTestbed
 ugv1.hasResourceStatus = SAMANT::SLEEPMODE
@@ -299,7 +299,7 @@ ugv1.save
 ugvTestbed.hasResource << ugv1
 ugvTestbed.save
 
-auv1 = SAMANT::UxV.for("urn:AuV1".to_sym)
+auv1 = SAMANT::Uxv.for("urn:AuV1".to_sym)
 auv1.hasHealthStatus = SAMANT::WARNING
 auv1.isResourceOf = auvTestbed
 auv1.hasResourceStatus = SAMANT::RELEASED

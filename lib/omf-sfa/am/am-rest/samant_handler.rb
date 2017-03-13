@@ -24,17 +24,23 @@ module OMF::SFA::AM::Rest
       # debug "PATH = " + path.inspect
       # Define method called
       if path.map(&:downcase).include? "getversion"
-        opts[:resource_uri] = "getversion"
+        opts[:resource_uri] = :getversion
       elsif path.map(&:downcase).include? "listresources"
-        opts[:resource_uri] = "listresources"
+        opts[:resource_uri] = :listresources
       elsif path.map(&:downcase).include? "describe"
-        opts[:resource_uri] = "describe"
+        opts[:resource_uri] = :describe
       elsif path.map(&:downcase).include? "status"
-        opts[:resource_uri] = "status"
+        opts[:resource_uri] = :status
       elsif path.map(&:downcase).include? "allocate"
-        opts[:resource_uri] = "allocate"
+        opts[:resource_uri] = :allocate
       elsif path.map(&:downcase).include? "renew"
-        opts[:resource_uri] = "renew"
+        opts[:resource_uri] = :renew
+      elsif path.map(&:downcase).include? "provision"
+        opts[:resource_uri] = :provision
+      elsif path.map(&:downcase).include? "delete"
+        opts[:resource_uri] = :delete
+      elsif path.map(&:downcase).include? "shutdown"
+        opts[:resource_uri] = :shutdown
       else
         raise OMF::SFA::AM::Rest::BadRequestException.new "Invalid URL."
       end
@@ -48,13 +54,13 @@ module OMF::SFA::AM::Rest
     # @return [String] Description of the requested resource.
 
     def on_get (method, options)
-      if method == "getversion"
+      if method == :getversion
         get_version
-      elsif method == "listresources"
+      elsif method == :listresources
         list_resources(options)
-      elsif method == "describe"
+      elsif method == :describe
         d_scribe(options)
-      elsif method == "status"
+      elsif method == :status
         status(options)
       end
     end
@@ -66,15 +72,25 @@ module OMF::SFA::AM::Rest
     # @return [String] Description of the requested resource.
 
     def on_post (method, options)
-      if method == "allocate"
+      if method == :allocate
         allocate(options)
-      elsif method == "renew"
+      elsif method == :provision
+        provision(options)
+      end
+    end
+
+    def on_put(method,options)
+      if method == :renew
         renew(options)
       end
     end
 
     def on_delete (method, options)
-
+      if method == :delete
+        delete(options)
+      elsif method == :shutdown
+        shutdown(options)
+      end
     end
 
     # GetVersion:
@@ -91,6 +107,7 @@ module OMF::SFA::AM::Rest
     # or resources allocated to a slice.
 
     def list_resources(options)
+      #debug "options = " + options.inspect
       body, format = parse_body(options)
       params = body[:options]
       #debug "Body & Format = ", opts.inspect + ", " + format.inspect
@@ -121,7 +138,7 @@ module OMF::SFA::AM::Rest
         if only_available
           debug "only_available selected"
           # TODO maybe delete also interfaces and locations as well
-          comps.delete_if {|c| (c.kind_of?SAMANT::UxV) && (c.hasResourceStatus.to_uri == SAMANT::BOOKED.to_uri) }
+          comps.delete_if {|c| (c.kind_of?SAMANT::Uxv) && c.hasResourceStatus && (c.hasResourceStatus.to_uri == SAMANT::BOOKED.to_uri) }
         end
         resources.concat(comps)
         #debug "the resources: " + resources.inspect
@@ -241,7 +258,7 @@ module OMF::SFA::AM::Rest
         @return_struct[:code][:geni_code] = 1 # Bad Arguments
         @return_struct[:output] = "The following arguments is missing: 'urns'"
         @return_struct[:value] = ''
-        return @return_struct
+        return ['application/json', JSON.pretty_generate(@return_struct)]
       end
 
       if urns.kind_of? String
@@ -255,7 +272,7 @@ module OMF::SFA::AM::Rest
         @return_struct[:code][:geni_code] = error_code
         @return_struct[:output] = error_msg
         @return_struct[:value] = ''
-        return @return_struct
+        return ['application/json', JSON.pretty_generate(@return_struct)]
       end
 
       authorizer = options[:req].session[:authorizer]
@@ -348,7 +365,7 @@ module OMF::SFA::AM::Rest
     # a valid geni_operational_status and may possibly be made geni_ready for
     # experimenter use. This operation is synchronous, but may start a longer process.
 
-    def provision()
+    def provision(options)
       # TODO Nothing implemented yet for Provision call
       raise OMF::SFA::AM::Rest::BadRequestException.new "Provision NOT YET IMPLEMENTED"
     end
@@ -375,7 +392,7 @@ module OMF::SFA::AM::Rest
         @return_struct[:code][:geni_code] = 1 # Bad Arguments
         @return_struct[:output] = "Some of the following arguments are missing: 'slice_urn', 'expiration_time'"
         @return_struct[:value] = ''
-        return @return_struct
+        return ['application/json', JSON.pretty_generate(@return_struct)]
       end
 
       expiration_time = Time.parse(expiration_time).utc
@@ -385,7 +402,7 @@ module OMF::SFA::AM::Rest
         @return_struct[:code][:geni_code] = error_code
         @return_struct[:output] = error_msg
         @return_struct[:value] = ''
-        return @return_struct
+        return ['application/json', JSON.pretty_generate(@return_struct)]
       end
 
       debug('Renew ', slice_urn, ' until <', expiration_time, '>')
@@ -401,6 +418,7 @@ module OMF::SFA::AM::Rest
       else
         leases = @am_manager.find_all_samant_leases(slice_urn, $acceptable_lease_states, authorizer)
       end
+      debug "Leases contain: " + leases.inspect
 
       if leases.nil? || leases.empty?
         @return_struct[:code][:geni_code] = 1 # Bad Arguments
@@ -409,16 +427,18 @@ module OMF::SFA::AM::Rest
         return ['application/json', JSON.pretty_generate(@return_struct)]
       end
 
+      # TODO currently only one lease renewal supported
+      leased_components = @am_manager.find_all_samant_components_for_account(slice_urn, authorizer)
+      leased_components.delete_if {|c| !c.to_uri.to_s.include?"/leased"} # TODO FIX must return only child uxv nodes
+      debug "Leased Components: " + leased_components.inspect
+
       # TODO: check account/slice renew concept. Is it necessary?
 
       value = {}
       value[:geni_urn] = slice_urn
       value[:geni_slivers] = []
       leases.each do |lease|
-        lease_properties = {:expirationTime => expiration_time}
-        @am_manager.modify_samant_lease(lease_properties, lease, authorizer)
-        # TODO not sure if must-do
-        #@am_manager.scheduler.update_samant_lease_events_on_event_scheduler(lease)
+        @am_manager.renew_samant_lease(lease, leased_components, authorizer, expiration_time)
         tmp = {}
         tmp[:geni_sliver_urn]         = lease.to_uri.to_s
         tmp[:geni_expires]            = lease.expirationTime.to_s
@@ -507,6 +527,83 @@ module OMF::SFA::AM::Rest
       @return_struct[:output] = e.to_s
       @return_struct[:value] = ''
       return ['application/json', JSON.pretty_generate(@return_struct)]
+    end
+
+    # Delete a sliver by stopping it if it is still running, and then
+    # deallocating the resources associated with it. This call will
+    # stop and deallocate all resources associated with the given
+    # slice URN.
+    # (close the account and release the attached resources)
+
+    def delete(options)
+      body, format = parse_body(options)
+      params = body[:options]
+      #debug "Body & Format = ", opts.inspect + ", " + format.inspect
+      urns = params[:urns]
+      debug('DeleteSliver: URNS: ', urns.inspect, ' Options: ', options.inspect)
+
+      slice_urn, slivers_only, error_code, error_msg = parse_samant_urns(urns)
+      if error_code != 0
+        @return_struct[:code][:geni_code] = error_code
+        @return_struct[:output] = error_msg
+        @return_struct[:value] = ''
+        return ['application/json', JSON.pretty_generate(@return_struct)]
+      end
+
+      authorizer = options[:req].session[:authorizer]
+
+      value = []
+      if slivers_only # NOT SURE IF EVER APPLIED
+        urns.each do |urn|
+          l = @am_manager.find_samant_lease(urn, authorizer)
+          tmp = {}
+          tmp[:geni_sliver_urn] = urn
+          tmp[:geni_allocation_status] = 'geni_unallocated'
+          tmp[:geni_expires] = l.expirationTime.to_s
+          value << tmp
+        end
+      else
+        # TODO FIND ACCOUNT
+        leases = @am_manager.find_all_samant_leases(slice_urn, [SAMANT::ALLOCATED, SAMANT::PROVISIONED], authorizer)
+        debug "leases = " + leases.inspect
+        if leases.nil? || leases.empty?
+          @return_struct[:code][:geni_code] = 1 # Bad Arguments
+          @return_struct[:output] = "There are no slivers for slice: '#{slice_urn}'."
+          @return_struct[:value] = ''
+          return ['application/json', JSON.pretty_generate(@return_struct)]
+        end
+        leases.each do |l|
+          tmp = {}
+          tmp[:geni_sliver_urn] = l.to_uri
+          tmp[:geni_allocation_status] = 'geni_unallocated'
+          tmp[:geni_expires] = l.expirationTime.to_s
+          value << tmp
+        end
+      end
+      # TODO ELABORATE
+      @am_manager.close_samant_account(slice_urn, authorizer)
+      #debug "Slice '#{slice_urn}' associated with account '#{account.id}:#{account.closed_at}'"
+      debug "Slice '#{slice_urn}' deleted."
+
+      @return_struct[:code][:geni_code] = 0
+      @return_struct[:value] = value
+      @return_struct[:output] = ''
+      return ['application/json', JSON.pretty_generate(@return_struct)]
+    rescue OMF::SFA::AM::UnavailableResourceException => e
+      @return_struct[:code][:geni_code] = 12 # Search Failed
+      @return_struct[:output] = e.to_s
+      @return_struct[:value] = ''
+      return ['application/json', JSON.pretty_generate(@return_struct)]
+    end
+
+    # Perform an emergency shut down of a sliver. This operation is
+    # intended for administrative use. The sliver is shut down but
+    # remains available for further forensics.
+    # (close the account but do not release its resources)
+
+    def shutdown(options)
+      # TODO Nothing implemented yet for Provision call
+      raise OMF::SFA::AM::Rest::BadRequestException.new "Shutdown NOT YET IMPLEMENTED"
     end
 
     def parse_samant_urns(urns)

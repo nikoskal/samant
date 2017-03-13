@@ -10,8 +10,8 @@
     "leases": [
       {
         "client_id": "test_lease",
-        "valid_from": "2017-3-4T19:00:00Z",
-        "valid_until": "2017-3-4T20:00:00Z"
+        "valid_from": "2017-3-14T19:00:00Z",
+        "valid_until": "2017-3-14T20:00:00Z"
       }
     ],
     "nodes": [

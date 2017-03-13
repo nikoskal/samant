@@ -1,0 +1,11 @@
+{
+  "resources": {
+    "name": "NTUA",
+    "type": "point3D",
+    "authority": "samant",
+    "resource_description": {
+      "lat": "39.000",
+      "long": "290.001"
+    }
+  }
+}
