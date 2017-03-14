@@ -1,5 +1,13 @@
 {
   "options": {
-    "type": ["point3D"]
+    "type": ["uxv"],
+    "description": {
+      "hasInterface": {
+        "type": ["wired_interface"],
+        "description": {
+          "hasRole": "experimental"
+        }
+      }
+    }
   }
 }

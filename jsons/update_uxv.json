@@ -4,7 +4,19 @@
     "resource_description": {
       "resourceId": "Netmode1",
       "hasSliceID": "urn:publicid:IDN+omf:netmode+account+__default__",
-      "where": "urn:publicid:IDN+samant+point3D+NTUA"
+      "where": "urn:publicid:IDN+samant+point3D+NTUA",
+      "hasInterface": [
+        {
+          "name": "uav1:wlan17",
+          "type": "wireless_interface",
+          "authority": "samant",
+          "resource_description": {
+            "hasComponentID": "urn:publicid:IDN+samant+wireless_interface+uav1:wlan0",
+            "hasComponentName": "uav1:wlan0",
+            "hasRole": "experimental"
+          }
+        }
+      ]
     }
   }
 }

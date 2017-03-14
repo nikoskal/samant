@@ -739,13 +739,13 @@ module OMF::SFA::AM
       res.flatten!
     end
 
-    def find_all_samant_resources(category = nil)
+    def find_all_samant_resources(category = nil, description)
       av_classes = SAMANT.constants.select {|c| SAMANT.const_get(c).is_a? Class}
       debug "Available Classes = " + av_classes.inspect
       resources = []
-      if category.nil?
+      if category.nil? || category.empty?
         av_classes.each do |av_class|
-          resources << eval("SAMANT::#{av_class}").find(:all)
+          resources << eval("SAMANT::#{av_class}").find(:all, :conditions => description)
         end
       else
         category.each do |cat_class|
@@ -753,11 +753,11 @@ module OMF::SFA::AM
           unless av_classes.include?(cat_class.to_sym)
             raise UnavailableResourceException.new "Unknown Resource Category '#{cat_class.inspect}'. Please choose one of the following '#{av_classes.inspect}'"
           end
-          resources << eval("SAMANT::#{cat_class}").find(:all)
+          resources << eval("SAMANT::#{cat_class}").find(:all, :conditions => description)
         end
       end
+      debug "returned resources: " + resources.inspect
       resources.flatten!
-      #debug "returned resources: " + resources.inspect
     end
 
     # Find all components
