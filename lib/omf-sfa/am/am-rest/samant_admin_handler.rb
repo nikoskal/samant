@@ -13,9 +13,9 @@ module OMF::SFA::AM::Rest
       debug "Trying to connect from >>>>> " + remote_ip
       #debug "what contains? " + @@ip_whitelist.inspect
       #debug "contains? " + @@ip_whitelist.include?(remote_ip).to_s
-      unless @@ip_whitelist.include?(remote_ip)
-        raise OMF::SFA::AM::Rest::BadRequestException.new "Anauthorized access!"
-      end
+      #unless @@ip_whitelist.include?(remote_ip)
+      #  raise OMF::SFA::AM::Rest::BadRequestException.new "Anauthorized access!"
+      #end
       RDF::Util::Logger.logger.parent.level = 'off' # Worst Bug *EVER*
       if path.map(&:downcase).include? "getinfo"
         opts[:resource_uri] = :getinfo
