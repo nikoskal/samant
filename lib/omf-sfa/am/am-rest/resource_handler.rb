@@ -1,6 +1,7 @@
 require 'omf-sfa/am/am-rest/rest_handler'
 require 'omf-sfa/am/am_manager'
 require 'uuid'
+require 'json/ld'
 require_relative '../../omn-models/resource.rb'
 #require_relative '../../omn-models/populator.rb'
 
@@ -208,7 +209,8 @@ module OMF::SFA::AM::Rest
       qu_ary.each { |query|
         query.each_statement do |s,p,o|
           tmp_query = sparql.construct([s, :p, :o]).where([s, :p, :o])
-          output = RDF::JSON::Writer.buffer do |writer|
+          #output = RDF::JSON::Writer.buffer do |writer| # RDF JSON format
+          output = JSON::LD::Writer.buffer do |writer| # JSON-LD format
             writer << tmp_query #$repository
           end
           unless prev_output == output or output == "null\n"# KARATIA MEGALI

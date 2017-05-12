@@ -19,6 +19,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   # specify any dependencies here; for example:
+  s.add_runtime_dependency "json-ld"
   s.add_runtime_dependency "rake", "11.2.2"
   s.add_runtime_dependency "rdf", "2.0.0"
   s.add_development_dependency "minitest", "5.1" # was 4.3.3
@@ -41,6 +42,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "builder", "3.2"
   s.add_runtime_dependency "rdf-do", "2.0.0"
   s.add_runtime_dependency "do_sqlite3"
+  s.add_runtime_dependency "rdf-sesame"
   #s.add_runtime_dependency "do_postgres"
 #
   s.add_runtime_dependency "equivalent-xml", "0.2.9"
