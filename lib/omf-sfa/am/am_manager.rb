@@ -362,8 +362,11 @@ module OMF::SFA::AM
     #
 
     def find_all_samant_leases(account_urn = nil, state = [SAMANT::ALLOCATED, SAMANT::PROVISIONED, SAMANT::UNALLOCATED, SAMANT::CANCELLED, SAMANT::PENDING], authorizer)
+
       debug "find_all_samant_leases: account: #{authorizer.account.inspect} status: #{state.inspect}"
-      debug "authorizer urn = " + authorizer.account[:urn].inspect
+      debug "find_all_samant_leases: authorizer: #{authorizer.inspect} "
+      debug "authorizer urn = " + authorizer.account[:urn].inspect unless authorizer.account.nil?
+
       if account_urn.nil?
         if state.kind_of?(Array)
           leases = []
@@ -375,8 +378,11 @@ module OMF::SFA::AM
           leases = SAMANT::Lease.find(:all, :conditions => {:hasReservationState => state.to_uri})
         end
       else
-        debug "slice urn = " + account_urn
-        raise InsufficientPrivilegesException unless account_urn == authorizer.account[:urn]
+        # debug "slice account_urn = " + account_urn[:urn].inspect
+        # debug "slice authorizer.account[:urn] = " + authorizer.account[:urn].inspect
+        raise InsufficientPrivilegesException unless account_urn == authorizer.account[:urn] || authorizer.account[:urn] == "urn:publicid:IDN+omf:netmode+account+__default__"
+
+        # raise InsufficientPrivilegesException unless account_urn[:urn] == authorizer.account[:urn]
         if state.kind_of?(Array)
           leases = []
           state.each { |istate|
@@ -384,9 +390,14 @@ module OMF::SFA::AM
           }
           leases.flatten!
         else
+
           leases = SAMANT::Lease.find(:all, :conditions => {:hasSliceID => account_urn, :hasReservationState => state.to_uri})
         end
       end
+      debug 'eftasa edo!!!! '
+      debug authorizer.can_view_lease?
+      debug 'telos'
+
       leases.map do |l| # den paizei rolo to kathe lease pou pernaw san parametro, logika typiko
         begin
           raise InsufficientPrivilegesException unless authorizer.can_view_lease?(l)
@@ -396,6 +407,56 @@ module OMF::SFA::AM
         end
       end
     end
+
+
+
+    def find_all_samant_leases_rpc(account_urn = nil, state = [SAMANT::ALLOCATED, SAMANT::PROVISIONED, SAMANT::UNALLOCATED, SAMANT::CANCELLED, SAMANT::PENDING], authorizer)
+
+      debug "find_all_samant_leases: account: #{authorizer.account.inspect} status: #{state.inspect}"
+      # debug "find_all_samant_leases: authorizer: #{authorizer.inspect} "
+      debug "authorizer urn = " + authorizer.account[:urn].inspect unless authorizer.account.nil?
+
+      if account_urn.nil?
+        if state.kind_of?(Array)
+          leases = []
+          state.each { |istate|
+            leases << SAMANT::Lease.find(:all, :conditions => {:hasReservationState => istate.to_uri})
+          }
+          leases.flatten!
+        else
+          leases = SAMANT::Lease.find(:all, :conditions => {:hasReservationState => state.to_uri})
+        end
+      else
+        # debug "slice account_urn = " + account_urn[:urn].inspect
+        # debug "slice authorizer.account[:urn] = " + authorizer.account[:urn].inspect
+        # raise InsufficientPrivilegesException unless account_urn == authorizer.account[:urn]
+        raise InsufficientPrivilegesException unless account_urn[:urn] == authorizer.account[:urn]
+        if state.kind_of?(Array)
+          leases = []
+          state.each { |istate|
+            leases << SAMANT::Lease.find(:all, :conditions => {:hasSliceID => account_urn[:urn], :hasReservationState => istate.to_uri})
+          }
+          leases.flatten!
+        else
+
+          leases = SAMANT::Lease.find(:all, :conditions => {:hasSliceID => account_urn[:urn], :hasReservationState => state.to_uri})
+        end
+      end
+      debug 'eftasa edo!!!! '
+      debug authorizer.can_view_lease?
+      debug 'telos'
+
+      leases.map do |l| # den paizei rolo to kathe lease pou pernaw san parametro, logika typiko
+        begin
+          raise InsufficientPrivilegesException unless authorizer.can_view_lease?(l)
+          l
+        rescue InsufficientPrivilegesException
+          nil
+        end
+      end
+    end
+
+
 
     # Modify lease described by +lease_descr+ hash
     #
@@ -708,14 +769,57 @@ module OMF::SFA::AM
 
     def find_all_samant_components_for_account(account_urn = nil, authorizer)
       debug "find_all_samant_components_for_account: #{account_urn}"
+      debug "find_all_samant_components_for_account  authorizer.account[:urn]: #{ authorizer.account[:urn]}"
+
       res = []
       ifr = [] # interfaces
       snr = []
       lct = []
       if account_urn.nil?
+      # if authorizer.account[:urn].nil?
         res << SAMANT::Uxv.find(:all)
       else
-        raise InsufficientPrivilegesException unless account_urn == authorizer.account[:urn]
+        raise InsufficientPrivilegesException unless account_urn == authorizer.account[:urn] || authorizer.account[:urn] == "urn:publicid:IDN+omf:netmode+account+__default__"
+        # raise InsufficientPrivilegesException unless account_urn[:urn] == authorizer.account[:urn]
+
+        # res << SAMANT::Uxv.find(:all, :conditions => {:hasSliceID => authorizer.account[:urn]})
+        res << SAMANT::Uxv.find(:all, :conditions => {:hasSliceID => account_urn})
+      end
+      res.flatten!
+      res.map do |r|
+        # Check for Interfaces & Sensors & Locations (Used in Rspec)
+        snr << r.hasSensorSystem
+        ifr << r.hasInterface
+        lct << r.where
+        begin
+          raise InsufficientPrivilegesException unless authorizer.can_view_resource?(r)
+          r
+        rescue InsufficientPrivilegesException
+          nil
+        end
+      end
+      ifr.flatten!
+      #debug "@@@@@Interfaces: " + ifr.inspect
+      #debug "@@@@@Sensors: " + snr.inspect
+      #debug "@@@@@Locations: " + lct.inspect
+      res << ifr << lct
+      res.flatten!
+    end
+
+    def find_all_samant_components_for_account_rpc(account_urn = nil, authorizer)
+      debug "find_all_samant_components_for_account: #{account_urn}"
+      # debug "find_all_samant_components_for_account authorizer.account[:urn]: #{authorizer.account[:urn]}"
+      res = []
+      ifr = [] # interfaces
+      snr = []
+      lct = []
+      if account_urn.nil?
+        # if authorizer.account[:urn].nil?
+        res << SAMANT::Uxv.find(:all)
+      else
+        # raise InsufficientPrivilegesException unless account_urn == authorizer.account[:urn]
+        raise InsufficientPrivilegesException unless account_urn[:urn] == authorizer.account[:urn]
+
         res << SAMANT::Uxv.find(:all, :conditions => {:hasSliceID => authorizer.account[:urn]})
       end
       res.flatten!
@@ -738,6 +842,7 @@ module OMF::SFA::AM
       res << ifr << lct
       res.flatten!
     end
+
 
     def find_all_samant_resources(category = nil, description)
       av_classes = SAMANT.constants.select {|c| SAMANT.const_get(c).is_a? Class}
@@ -879,7 +984,10 @@ module OMF::SFA::AM
       #raise OMF::SFA::AM::Rest::BadRequestException.new "CREATE RESOURCES NOT YET IMPLEMENTED"
       debug "find_or_create_samant_resource_for_account: r_descr:'#{resource_descr}' type:'#{type_to_create}' authorizer:'#{authorizer.inspect}'"
       debug "slice id = " + authorizer.account.urn.inspect
+      #debug "slice id = " + resource_descr[:urns].to_s
+      #debug "MONO = " + resource_descr.to_s
       resource_descr[:hasSliceID] = authorizer.account.urn
+      #resource_descr[:hasSliceID] = resource_descr[:urns]
       find_or_create_samant_resource(resource_descr, type_to_create, authorizer)
     end
 
