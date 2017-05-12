@@ -120,10 +120,11 @@ module OMF::SFA::AM::Rest
       rspec_version = params[:geni_rspec_version] # TODO Nothing implemented yet for REST API rspec_version
 
       authorizer = options[:req].session[:authorizer]
-      #debug "!!!USER = " + authorizer.user.inspect
-      #debug "!!!ACCOUNT = " + authorizer.account.inspect
-      #debug "!!!ACCOUNT_URN = " + authorizer.account[:urn]
-      #debug "!!!ACCOUNT = " + authorizer.user.accounts.first.inspect
+
+      # debug "!!!USER = " + authorizer.user.inspect
+      # debug "!!!ACCOUNT = " + authorizer.account.inspect
+      # debug "!!!ACCOUNT_URN = " + authorizer.account[:urn]
+      # debug "!!!ACCOUNT = " + authorizer.user.accounts.first.inspect
 
       if slice_urn
         @return_struct[:code][:geni_code] = 4 # Bad Version
@@ -190,6 +191,9 @@ module OMF::SFA::AM::Rest
       end
 
       authorizer = options[:req].session[:authorizer]
+      # debug "aaaaaaaaaaaaaaa"
+      # debug authorizer.inspect
+      # debug "bbbbbbbbbbbbbbb"
 
       resources = []
       leases = []
@@ -283,6 +287,16 @@ module OMF::SFA::AM::Rest
       #debug "returned resources = " + resources.inspect
       #raise OMF::SFA::AM::UnavailableResourceException.new "BREAKPOINT"
 
+      rspec[:leases].each { |lease|
+        lease[:urns] = urns.first
+      }
+      rspec[:nodes].each { |node|
+        node[:urns] = urns.first
+      }
+
+      authorizer.account[:urn] = urns.first
+      debug "autho" + authorizer.inspect
+      debug "rspec = " + rspec.inspect
       resources = @am_manager.update_samant_resources_from_rspec(rspec, true, authorizer)
       debug "returned resources = " + resources.inspect
 
