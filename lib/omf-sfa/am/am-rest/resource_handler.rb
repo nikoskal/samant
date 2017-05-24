@@ -265,7 +265,7 @@ module OMF::SFA::AM::Rest
         global_writer << sparql
                      .construct([rsc_uri, :p, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#Node")],
                                 [rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#isExclusive"), true],
-                                [RDF::URI.new(uuid), RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasResource"), rsc_uri],
+                                [RDF::URI.new(uuid), RDF::URI.new("http://open-multinet.info/ontology/omn#hasResource"), rsc_uri],
                                 [rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn#isResourceOf"), RDF::URI.new(uuid)],
                                 [rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#hasHardwareType"), RDF::URI.new(hw1)],
                                 [rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#hasHardwareType"), RDF::URI.new(hw2)],
