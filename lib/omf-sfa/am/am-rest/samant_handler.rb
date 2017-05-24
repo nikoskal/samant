@@ -143,7 +143,7 @@ module OMF::SFA::AM::Rest
         end
         resources.concat(comps)
         #debug "the resources: " + resources.inspect
-        used_for_side_effect = OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources) # -> creates the advertisement rspec file inside /ready4translation (less detailed, sfa enabled)
+        used_for_side_effect = OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources, :Offering) # -> creates the advertisement rspec file inside /ready4translation (less detailed, sfa enabled)
         res = OMF::SFA::AM::Rest::ResourceHandler.omn_response_json(resources, options) # -> returns the json formatted results (more detailed, omn enriched)
         # TODO insert identifier to res so to distinguish advertisement from request from manifest etc. (see also am_rpc_service)
       end
@@ -212,7 +212,7 @@ module OMF::SFA::AM::Rest
         resources.concat(@am_manager.find_all_samant_components_for_account(slice_urn, authorizer))
       end
 
-      used_for_side_effect = OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources) # -> creates the advertisement rspec file inside /ready4translation (less detailed, sfa enabled)
+      used_for_side_effect = OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources, :Offering) # -> creates the advertisement rspec file inside /ready4translation (less detailed, sfa enabled)
       res = OMF::SFA::AM::Rest::ResourceHandler.omn_response_json(resources, options) # -> returns the json formatted results (more detailed, omn enriched)
 
       value = {}
@@ -326,7 +326,7 @@ module OMF::SFA::AM::Rest
         return ['application/json', JSON.pretty_generate(@return_struct)]
       end
 
-      used_for_side_effect = OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources) # -> creates the advertisement rspec file inside /ready4translation (less detailed, sfa enabled)
+      used_for_side_effect = OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources, :Manifest) # -> creates the advertisement rspec file inside /ready4translation (less detailed, sfa enabled)
       res = OMF::SFA::AM::Rest::ResourceHandler.omn_response_json(resources, options) # -> returns the json formatted results (more detailed, omn enriched)
 
       value = {}

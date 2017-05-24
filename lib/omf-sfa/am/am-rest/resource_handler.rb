@@ -232,12 +232,13 @@ module OMF::SFA::AM::Rest
     # Creates the omn-rspec
     # currently works only for advertisement (offering) rspecs
 
-    def self.rspecker(resources)
+    def self.rspecker(resources, type)
+      timestamp = Time.now.getutc
       sparql = SPARQL::Client.new($repository)
       uuid = ("urn:uuid:" + SecureRandom.uuid).to_sym # Rspec urn
       rtype_g = [RDF::URI.new(uuid), RDF::URI.new("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
-                 RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#Offering")]
-      rlabel_g = [RDF::URI.new(uuid), RDF::URI.new("http://www.w3.org/2000/01/rdf-schema#label"), "Offering"]
+                 RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#"+type.to_s)]
+      rlabel_g = [RDF::URI.new(uuid), RDF::URI.new("http://www.w3.org/2000/01/rdf-schema#label"), type.to_s]
       global_writer = []
       global_writer << rlabel_g << rtype_g
 
@@ -261,6 +262,15 @@ module OMF::SFA::AM::Rest
         global_writer << sparql
                         .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#startTime"), :o])
                         .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#startTime"), :o])
+        global_writer << sparql
+                             .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasID"), :o])
+                             .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasID"), :o])
+        if type == :Manifest
+          global_writer << sparql
+                               .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasSliceID"), :o])
+                               .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasSliceID"), :o])
+        end
+
         # Nodes
         global_writer << sparql
                      .construct([rsc_uri, :p, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#Node")],
@@ -291,26 +301,35 @@ module OMF::SFA::AM::Rest
         global_writer << sparql
                      .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#hasInterface"), :o])
                       .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#hasInterface"), :o])
-        global_writer << sparql
+        unless type == :Manifest
+          global_writer << sparql
                       .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#hasLocation"), :o])
                       .where([rsc_uri, RDF::URI.new("http://www.georss.org/georss/where"), :o])
+          global_writer << sparql
+                             .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasLease"), :o])
+                             .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasLease"), :l],
+                              [:l, :p, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#Allocated/")],
+                                    [:l, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasID"), :o])
+        end
 
         # Interfaces
-        global_writer << sparql
-                    .construct([rsc_uri, :p, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#Interface")])
-                    .where([rsc_uri, :p, RDF::URI.new("http://open-multinet.info/ontology/omn-domain-wireless#WiredInterface")])
-        global_writer << sparql
-                    .construct([rsc_uri, :p, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#Interface")])
-                    .where([rsc_uri, :p, RDF::URI.new("http://open-multinet.info/ontology/omn-domain-wireless#WirelessInterface")])
-        global_writer << sparql
-                    .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasComponentID"), :o])
-                    .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasComponentID"), :o])
-        global_writer << sparql
-                      .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasComponentName"), :o])
-                      .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasComponentName"), :o])
-        global_writer << sparql
-                      .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasRole"), :o])
-                      .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasRole"), :o])
+        unless type == :Manifest
+          global_writer << sparql
+                      .construct([rsc_uri, :p, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#Interface")])
+                      .where([rsc_uri, :p, RDF::URI.new("http://open-multinet.info/ontology/omn-domain-wireless#WiredInterface")])
+          global_writer << sparql
+                      .construct([rsc_uri, :p, RDF::URI.new("http://open-multinet.info/ontology/omn-resource#Interface")])
+                      .where([rsc_uri, :p, RDF::URI.new("http://open-multinet.info/ontology/omn-domain-wireless#WirelessInterface")])
+          global_writer << sparql
+                      .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasComponentID"), :o])
+                      .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasComponentID"), :o])
+          global_writer << sparql
+                        .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasComponentName"), :o])
+                        .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasComponentName"), :o])
+          global_writer << sparql
+                        .construct([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasRole"), :o])
+                        .where([rsc_uri, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasRole"), :o],)
+        end
 
         # Hardware Types
         global_writer << sparql
@@ -338,7 +357,12 @@ module OMF::SFA::AM::Rest
                              .where([rsc_uri, RDF::URI.new("http://www.w3.org/2003/01/geo/wgs84_pos#long"), :o])
         #debug "is it array? " + global_writer.kind_of?(Array).to_s
       }
-      RDF::Turtle::Writer.open("ready4translation/adv_rspec.ttl") do |writer|
+      if type == :Offering
+        filename = "ready4translation/advRSpec@#{timestamp}.ttl".delete(' ')
+      else
+        filename = "ready4translation/mnfRSpec@#{timestamp}.ttl".delete(' ')
+      end
+      RDF::Turtle::Writer.open(filename) do |writer|
         global_writer.collect { |g|
           writer << g
         }
