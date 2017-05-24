@@ -181,7 +181,8 @@ module OMF::SFA::AM::Rest
 
     def show_resources_json(resources, path, opts)
       res = resources ? resource_to_json(resources, path, opts) : {response: "OK"}
-      res[:about] = opts[:req].path
+      #TODO removed (temporary) for HAI integration
+      #res[:about] = opts[:req].path
 
       ['application/json', JSON.pretty_generate({:resource_response => res}, :for_rest => true)]
     end
@@ -222,7 +223,9 @@ module OMF::SFA::AM::Rest
       }
       raise UnknownResourceException, "No resources matching the request." if res.empty?
       #debug opts[:req].path
-      res << {:about => opts[:req].path}
+      #TODO removed (temporary) for HAI integration
+      #res << {:about => opts[:req].path}
+      res
       #::JSON.pretty_generate(res, :for_rest => true) # apo merged hash se JSON
     end
 
