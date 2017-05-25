@@ -1,13 +1,8 @@
 {
   "options": {
-    "type": ["uxv"],
+    "type": ["Lease"],
     "description": {
-      "hasInterface": {
-        "type": ["wired_interface"],
-        "description": {
-          "hasRole": "experimental"
-        }
-      }
+      "hasReservationState": "http://open-multinet.info/ontology/omn-lifecycle#Provisioned/"
     }
   }
 }

@@ -1561,8 +1561,13 @@ module OMF::SFA::AM
       #   raise UnavailablePropertiesException.new "Cannot create lease without 'startTime' and 'expirationTime' properties"
       # end
 
+      t_now = Time.now
       if (lease_el[:valid_from].nil? || lease_el[:valid_until].nil?)
         raise UnavailablePropertiesException.new "Cannot create lease without ':valid_from' and 'valid_until' properties"
+      end
+
+      if t_now >= (lease_el[:valid_from])
+        raise OMF::SFA::AM::AMManagerException.new 'Lease start time cannot be in the past.'
       end
 
       lease_properties = {:startTime => Time.parse(lease_el[:valid_from]).utc, :expirationTime => Time.parse(lease_el[:valid_until]).utc}

@@ -487,35 +487,44 @@ module OMF::SFA::AM
       end
       if t_now >= lease.startTime # the lease is active - create only the on_lease_end event
         debug "1"
-        lease.hasReservationState = SAMANT::CANCELLED
-        lease.save
-        #@event_scheduler.in('0.1s', tag: "#{l_uuid}_start") do # praktika ksekina to twra
-        #  lease =  SAMANT::Lease.find(:all, :conditions => { :hasID => l_uuid} )
-        #  break if lease.nil?
-        #  #@liaison.on_lease_start(lease) # Not Implemented
-        #end
+        # TODO check how to handle leases that started on the past
+        @event_scheduler.in('0.1s', tag: "#{l_uuid}_start") do # praktika ksekina to twra
+          url = "http://dtnmode3.lab.netmode.ntua.gr:8080/openrdf-sesame/repositories/samRemote"
+          Spira.repository = RDF::Sesame::Repository.new(url)
+          lease_f =  SAMANT::Lease.find(:all, :conditions => { :hasID => l_uuid} ).first
+          if lease_f.nil?
+            lease.hasReservationState = SAMANT::ALLOCATED # allocated and then provisioned by hand (?)
+            lease.save
+          else
+            # let it be (probably provisioned)
+          end
+        end
         # TODO come up with a better handling
-        raise OMF::SFA::AM::AMManagerException.new 'Lease start time cannot be past.'
+        #raise OMF::SFA::AM::AMManagerException.new 'Lease start time cannot be past.'
       else
         debug "2"
         #TODO "to_s" experimentaly
         @event_scheduler.at(lease.startTime.to_s, tag: "#{l_uuid}_start") do # TOTE POU LEEI TO STARTTIME THA TA KANEI OLA AUTA
+          url = "http://dtnmode3.lab.netmode.ntua.gr:8080/openrdf-sesame/repositories/samRemote"
+          Spira.repository = RDF::Sesame::Repository.new(url)
           debug "Lease uuid to search: " + l_uuid.to_s
           debug "Is it String? " + l_uuid.kind_of?(String).to_s
-          lease = SAMANT::Lease.find(:all, :conditions => { :hasID => l_uuid} )
+          lease = SAMANT::Lease.find(:all, :conditions => { :hasID => l_uuid} ).first
           break if lease.nil?
           lease.hasReservationState = SAMANT::PROVISIONED
           lease.save
           # TODO thelei ftiaksimo, o pateras edw prepei na ginetai booked kai na tou anatithetai to sliceID
           # parent.hasResourceStatus = SAMANT::BOOKED
           # parent.hasSliceID = ....
-          debug "Lease found; Reservation State = " + lease.hasReservationState.inspect
+          debug "Lease found; new Reservation State = " + lease.hasReservationState.inspect
           #@liaison.on_lease_start(lease) # Not Implemented
         end
       end
       debug "3"
       @event_scheduler.at(lease.expirationTime.to_s, tag: "#{l_uuid}_end") do # stamata to tote
-        lease =  SAMANT::Lease.find(:all, :conditions => { :hasID => l_uuid} )
+        url = "http://dtnmode3.lab.netmode.ntua.gr:8080/openrdf-sesame/repositories/samRemote"
+        Spira.repository = RDF::Sesame::Repository.new(url)
+        lease =  SAMANT::Lease.find(:all, :conditions => { :hasID => l_uuid} ).first
         lease.hasReservationState = SAMANT::UNALLOCATED # TODO kati kalytero gia past
         lease.save
         # TODO thelei ftiaksimo, o pateras edw prepei na eleutherwnetai kai na tou diagrafetai to slice ID

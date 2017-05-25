@@ -205,11 +205,24 @@ module OMF::SFA::AM::Rest
 
     def find_doctor(descr)
       descr.each do |key,value|
+        next if key == :hasComponentID || key == :hasSliceID
         if value.is_a?(Hash)
           new_value = get_info(value).first.uri.to_s
           descr[key] = RDF::URI(new_value)
+        #elsif value.is_a?(Array)
+        #  arr_value = value
+        #  new_array = []
+        #  arr_value.each do |v|
+        #    if v.include? "http" or v.include? "urn"
+        #      new_array << RDF::URI(v).to_uri
+        #    end
+        #  end
+        #  descr[key] = new_array
+        elsif value.include? "http" or value.include? "urn" # Instance found, i.e HealthStatus, Resource Status etc
+          descr[key] = RDF::URI(value)
         end
       end
+      debug "New descr contains: " + descr.inspect
       descr
     end
 
