@@ -2,7 +2,7 @@
   "options": {
     "type": ["Lease"],
     "description": {
-      "hasReservationState": "http://open-multinet.info/ontology/omn-lifecycle#Provisioned/"
+      "hasReservationState": ["http://open-multinet.info/ontology/omn-lifecycle#Provisioned/", "http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#Cancelled/"]
     }
   }
 }

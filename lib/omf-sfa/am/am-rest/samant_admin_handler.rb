@@ -72,7 +72,7 @@ module OMF::SFA::AM::Rest
       debug 'Admin ListResources: Options: ', params.inspect
       category = params[:type]
       descr = params[:description]
-      descr = find_doctor(descr)
+      descr, find_with_array_hash = find_doctor(descr)
 
       if category # if applied specific resource type
         debug "descr = " + descr.inspect
@@ -82,6 +82,9 @@ module OMF::SFA::AM::Rest
         resources.delete_if {|c| !urns.include?(c.to_uri.to_s)}
       end
       resources.delete_if {|c| c.to_uri.to_s.include?"/leased"} unless resources.nil?
+      unless find_with_array_hash.empty?
+        resources.delete_if {|c| !find_with_array_hash.values[0].include? eval("c.#{find_with_array_hash.keys[0]}")} unless resources.nil?
+      end
       resources
     end
 
@@ -204,26 +207,30 @@ module OMF::SFA::AM::Rest
     # Find instances
 
     def find_doctor(descr)
+      find_with_array_hash = Hash.new
       descr.each do |key,value|
         next if key == :hasComponentID || key == :hasSliceID
         if value.is_a?(Hash)
           new_value = get_info(value).first.uri.to_s
           descr[key] = RDF::URI(new_value)
-        #elsif value.is_a?(Array)
-        #  arr_value = value
-        #  new_array = []
-        #  arr_value.each do |v|
-        #    if v.include? "http" or v.include? "urn"
-        #      new_array << RDF::URI(v).to_uri
-        #    end
-        #  end
-        #  descr[key] = new_array
+        elsif value.is_a?(Array)
+          arr_value = value
+          new_array = []
+          arr_value.each do |v|
+            if v.include? "http" or v.include? "urn"
+              new_array << RDF::URI(v).to_uri
+            end
+          end
+          find_with_array_hash[key] = new_array
+          puts "Array find fix, hash contains:"
+          puts find_with_array_hash.inspect
+          descr.delete(key)
         elsif value.include? "http" or value.include? "urn" # Instance found, i.e HealthStatus, Resource Status etc
           descr[key] = RDF::URI(value)
         end
       end
       debug "New descr contains: " + descr.inspect
-      descr
+      return descr, find_with_array_hash
     end
 
   end
