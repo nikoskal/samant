@@ -115,9 +115,7 @@ module OMF::SFA::AM::Rest
       debug 'ListResources: Options: ', params.inspect
 
       only_available = params[:only_available]
-      compressed = params[:geni_compressed] # TODO Nothing implemented yet for REST API compression
       slice_urn = params[:slice_urn]
-      rspec_version = params[:geni_rspec_version] # TODO Nothing implemented yet for REST API rspec_version
 
       authorizer = options[:req].session[:authorizer]
 
@@ -143,9 +141,12 @@ module OMF::SFA::AM::Rest
         end
         resources.concat(comps)
         #debug "the resources: " + resources.inspect
-        used_for_side_effect = OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources, :Offering) # -> creates the advertisement rspec file inside /ready4translation (less detailed, sfa enabled)
+        # TODO uncomment to obtain rspeck, commented out because it's very time-wasting
+        #used_for_side_effect = OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources, :Offering) # -> creates the advertisement rspec file inside /ready4translation (less detailed, sfa enabled)
+        start = Time.now
+        debug "START CREATING JSON"
         res = OMF::SFA::AM::Rest::ResourceHandler.omn_response_json(resources, options) # -> returns the json formatted results (more detailed, omn enriched)
-        # TODO insert identifier to res so to distinguish advertisement from request from manifest etc. (see also am_rpc_service)
+        debug "END CREATING JSON. total time = " + (Time.now-start).to_s
       end
 
       @return_struct[:code][:geni_code] = 0
@@ -160,10 +161,9 @@ module OMF::SFA::AM::Rest
     end
 
     # Describe:
-    # Return information about resources allocated to a slice.
+    # Return information about resources allocated to *one* slice or *many* slivers belonging to *one_slice*.
 
     def d_scribe(options)
-      # Request info regarding either *one* slice or *many* slivers belonging to *one_slice*
       body, format = parse_body(options)
       params = body[:options]
       #debug "Body & Format = ", opts.inspect + ", " + format.inspect
@@ -177,12 +177,10 @@ module OMF::SFA::AM::Rest
         return ['application/json', JSON.pretty_generate(@return_struct)]
       end
 
-      compressed = params["geni_compressed"] # TODO Nothing implemented yet for REST API compression
-      rspec_version = params["geni_rspec_version"] # TODO Nothing implemented yet for REST API rspec_version
-
       # SLICE == ACCOUNT / SLIVER == LEASE
       # Must provide full slice URN, e.g /urn:publicid:IDN+omf:netmode+account+__default__
       slice_urn, slivers_only, error_code, error_msg = parse_samant_urns(urns)
+
       if error_code != 0
         @return_struct[:code][:geni_code] = error_code
         @return_struct[:output] = error_msg
@@ -191,10 +189,7 @@ module OMF::SFA::AM::Rest
       end
 
       authorizer = options[:req].session[:authorizer]
-      # debug "aaaaaaaaaaaaaaa"
       # debug authorizer.inspect
-      # debug "bbbbbbbbbbbbbbb"
-
       resources = []
       leases = []
       if slivers_only
@@ -211,8 +206,8 @@ module OMF::SFA::AM::Rest
         leases = resources.dup
         resources.concat(@am_manager.find_all_samant_components_for_account(slice_urn, authorizer))
       end
-
-      used_for_side_effect = OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources, :Offering) # -> creates the advertisement rspec file inside /ready4translation (less detailed, sfa enabled)
+      # TODO uncomment to obtain rspeck, commented out because it's very time-wasting
+      # used_for_side_effect = OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources, :Offering) # -> creates the advertisement rspec file inside /ready4translation (less detailed, sfa enabled)
       res = OMF::SFA::AM::Rest::ResourceHandler.omn_response_json(resources, options) # -> returns the json formatted results (more detailed, omn enriched)
 
       value = {}
@@ -225,7 +220,7 @@ module OMF::SFA::AM::Rest
         tmp[:geni_expires]            = lease.expirationTime.to_s
         #debug "Reservation Status vs SAMANT::ALLOCATED: " + lease.hasReservationState.uri + " vs " + SAMANT::ALLOCATED.uri
         tmp[:geni_allocation_status]  = if lease.hasReservationState.uri == SAMANT::ALLOCATED.uri then "geni_allocated"
-                                        elsif lease.hasReservationState == SAMANT::PROVISIONED then "geni_provisioned"
+                                        elsif lease.hasReservationState.uri == SAMANT::PROVISIONED.uri then "geni_provisioned"
                                         else "geni_unallocated"
                                         end
         tmp[:geni_operational_status] = "NO_INFO" # lease.isReservationOf.hasResourceStatus.to_s # TODO Match geni_operational_status with an ontology concept
@@ -457,7 +452,7 @@ module OMF::SFA::AM::Rest
         tmp[:geni_sliver_urn]         = lease.to_uri.to_s
         tmp[:geni_expires]            = lease.expirationTime.to_s
         tmp[:geni_allocation_status]  = if lease.hasReservationState.uri == SAMANT::ALLOCATED.uri then "geni_allocated"
-                                        elsif lease.hasReservationState == SAMANT::PROVISIONED then "geni_provisioned"
+                                        elsif lease.hasReservationState.uri == SAMANT::PROVISIONED.uri then "geni_provisioned"
                                         else "geni_unallocated"
                                         end
         tmp[:geni_operational_status] = "NO_INFO" # lease.isReservationOf.hasResourceStatus.to_s # TODO Match geni_operational_status with an ontology concept

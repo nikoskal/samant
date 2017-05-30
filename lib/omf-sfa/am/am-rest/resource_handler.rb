@@ -189,44 +189,46 @@ module OMF::SFA::AM::Rest
 
     ### self.tade, alliws einai instance method. emeis tin theloume class method
 
-    def self.omn_response_json(resource, opts)
+    def self.omn_response_json(resources, opts)
       debug "Generating OMN (json) response"
-      #['application/json', resource_to_turtle(resource, opts)]
-      query_to_omn_json(resource, opts)
+      jsonLDserializer(resources, opts)
     end
 
-    def self.query_to_omn_json(query, opts)
-      if query.nil?
+    def self.jsonLDserializer(resources, opts)
+      if resources.nil?
         return ::JSON.pretty_generate({:response => "OK", :about => opts[:req].path}) # KARATIA MEGALI 2
       end
       sparql = SPARQL::Client.new($repository)
-      res = Array.new
-      prev_output = ""
-      if query.kind_of?(Array)
-        qu_ary = query
+      res = []
+      if resources.kind_of?(Array)
+        res_ary = resources
       else
-        qu_ary = [query]
+        res_ary = [resources]
       end
-      qu_ary.each { |query|
-        query.each_statement do |s,p,o|
-          tmp_query = sparql.construct([s, :p, :o]).where([s, :p, :o])
-          #output = RDF::JSON::Writer.buffer do |writer| # RDF JSON format
-          output = JSON::LD::Writer.buffer do |writer| # JSON-LD format
-            writer << tmp_query #$repository
-          end
-          unless prev_output == output or output == "null\n"# KARATIA MEGALI
-            # debug "Pre Json Output = " + output.inspect
-            res << ::JSON.parse(output)# apo JSON se hash, gia na ginei swsto merge
-            prev_output = output
-          end
+      #debug "resources = " + resources.inspect
+      res_ary.each { |resource|
+        query_graph = []
+        s = resource.to_uri
+        query_graph << sparql.construct([s, :p, :o])
+                          .where([s, :p, :o])
+                          .filter("?p !=  <http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#hasChild>") # do not show hasChild predicates
+                          .filter("!regex (str(?o), \"leased\")")
+                          .filter("?p != <http://open-multinet.info/ontology/omn-lifecycle#hasLease>")
+        query_graph << sparql.construct([s, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasLease"), :o])
+                           .where([s, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasLease"), :o], [:o, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasReservationState"), :rs])
+                           .filter("?rs != <http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#Cancelled/>")
+                           .filter("?o != <http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#Pending/>")
+        output = JSON::LD::Writer.buffer do |writer|
+          query_graph.collect { |q|
+            writer << q
+          }
         end
+        res << ::JSON.parse(output)# apo JSON se hash, gia na ginei swsto merge
       }
       raise UnknownResourceException, "No resources matching the request." if res.empty?
-      #debug opts[:req].path
       #TODO removed (temporary) for HAI integration
       #res << {:about => opts[:req].path}
       res
-      #::JSON.pretty_generate(res, :for_rest => true) # apo merged hash se JSON
     end
 
     # Creates the omn-rspec
