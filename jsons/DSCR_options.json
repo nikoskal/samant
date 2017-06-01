@@ -1,6 +1,6 @@
 
 {
   "options": {
-    "urns": ["urn:auv1+lease+test", "urn:ugv1+lease+test"],
+    "urns": ["urn:auv1+lease+test", "urn:ugv1+lease+test"]
   }
 }

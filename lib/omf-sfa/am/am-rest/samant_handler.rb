@@ -204,21 +204,22 @@ module OMF::SFA::AM::Rest
       else
         resources = @am_manager.find_all_samant_leases(slice_urn, $acceptable_lease_states, authorizer)
         leases = resources.dup
-        resources.concat(@am_manager.find_all_samant_components_for_account(slice_urn, authorizer))
+        components = @am_manager.find_all_samant_components_for_account(slice_urn, authorizer)
+        #components.collect! { |r| (r.kind_of?SAMANT::Uxv) && r.hasParent ? r.hasParent : r } # Replace child nodes with parent nodes
+        resources.concat(components)
       end
       # TODO uncomment to obtain rspeck, commented out because it's very time-wasting
       # used_for_side_effect = OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources, :Offering) # -> creates the advertisement rspec file inside /ready4translation (less detailed, sfa enabled)
       res = OMF::SFA::AM::Rest::ResourceHandler.omn_response_json(resources, options) # -> returns the json formatted results (more detailed, omn enriched)
 
       value = {}
-      value[:omn_rspec] = res # was :geni_rspec
+      value[:omn_rspec] = res
       value[:geni_urn] = slice_urn
       value[:geni_slivers] = []
       leases.each do |lease|
         tmp = {}
         tmp[:geni_sliver_urn]         = lease.to_uri.to_s
         tmp[:geni_expires]            = lease.expirationTime.to_s
-        #debug "Reservation Status vs SAMANT::ALLOCATED: " + lease.hasReservationState.uri + " vs " + SAMANT::ALLOCATED.uri
         tmp[:geni_allocation_status]  = if lease.hasReservationState.uri == SAMANT::ALLOCATED.uri then "geni_allocated"
                                         elsif lease.hasReservationState.uri == SAMANT::PROVISIONED.uri then "geni_provisioned"
                                         else "geni_unallocated"
@@ -276,31 +277,25 @@ module OMF::SFA::AM::Rest
 
       authorizer = options[:req].session[:authorizer]
 
-      #debug "is hash? " + rspec.is_a?(Hash).to_s
-      #debug "PARSED RSPEC = " + rspec.inspect
-      #resources = @am_manager.update_samant_resources_from_rspec(rspec, true, authorizer)
-      #debug "returned resources = " + resources.inspect
+      #rspec[:leases].each { |lease|
+      #  lease[:urns] = urns.first
+      #}
+      #rspec[:nodes].each { |node|
+      #  node[:urns] = urns.first
+      #}
+
+      #authorizer.account[:urn] = urns.first
+      #debug "autho" + authorizer.inspect
+      #debug "rspec = " + rspec.inspect
       #raise OMF::SFA::AM::UnavailableResourceException.new "BREAKPOINT"
-
-      rspec[:leases].each { |lease|
-        lease[:urns] = urns.first
-      }
-      rspec[:nodes].each { |node|
-        node[:urns] = urns.first
-      }
-
-      authorizer.account[:urn] = urns.first
-      debug "autho" + authorizer.inspect
-      debug "rspec = " + rspec.inspect
+      #TODO FIX THIS
+      raise OMF::SFA::AM::InsufficientPrivilegesException.new unless authorizer.account[:urn] == urns.first
       resources = @am_manager.update_samant_resources_from_rspec(rspec, true, authorizer)
       debug "returned resources = " + resources.inspect
-
-        #resources.pop #removes last element of array
       leases_only = true
       resources.each do |res|
         if !res.kind_of? SAMANT::Lease
           #debug "what am i looking? " + res.inspect
-          #debug "is a lease? "
           leases_only = false
           break
         end
@@ -308,7 +303,7 @@ module OMF::SFA::AM::Rest
       debug "Leases only? " + leases_only.to_s
 
       if resources.nil? || resources.empty? || leases_only
-        debug('CreateSliver failed', ":all the requested resources were unavailable for the requested DateTime.")
+        debug('Allocate failed', ":all the requested resources were unavailable for the requested DateTime.")
 
         resources.each do |res|
           # TODO logika to check tou PENDING xreiazetai stin periptwsi kata tin opoia to lease proupirxe
@@ -321,7 +316,8 @@ module OMF::SFA::AM::Rest
         return ['application/json', JSON.pretty_generate(@return_struct)]
       end
 
-      used_for_side_effect = OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources, :Manifest) # -> creates the advertisement rspec file inside /ready4translation (less detailed, sfa enabled)
+      # TODO uncomment to obtain rspeck, commented out because it's very time-wasting
+      #used_for_side_effect = OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources, :Manifest) # -> creates the advertisement rspec file inside /ready4translation (less detailed, sfa enabled)
       res = OMF::SFA::AM::Rest::ResourceHandler.omn_response_json(resources, options) # -> returns the json formatted results (more detailed, omn enriched)
 
       value = {}

@@ -118,7 +118,7 @@ module OMF::SFA::AM::Rest
       debug "slice urn = " + resource.hasSliceID.inspect
       debug "account urn = " + @account.urn.inspect
 
-      # TODO ta accounts den mporoun na kanoun release resource!!!
+      # TODO FIX THIS: user accounts cannot release resources!!!!
       unless resource.hasSliceID == @account.id && @permissions[:can_release_resource?]
         #raise OMF::SFA::AM::InsufficientPrivilegesException.new
       end

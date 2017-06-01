@@ -195,9 +195,7 @@ module OMF::SFA::AM::Rest
     end
 
     def self.jsonLDserializer(resources, opts)
-      if resources.nil?
-        return ::JSON.pretty_generate({:response => "OK", :about => opts[:req].path}) # KARATIA MEGALI 2
-      end
+      #debug "resources " + resources.inspect
       sparql = SPARQL::Client.new($repository)
       res = []
       if resources.kind_of?(Array)
@@ -205,19 +203,20 @@ module OMF::SFA::AM::Rest
       else
         res_ary = [resources]
       end
-      #debug "resources = " + resources.inspect
       res_ary.each { |resource|
         query_graph = []
         s = resource.to_uri
         query_graph << sparql.construct([s, :p, :o])
                           .where([s, :p, :o])
                           .filter("?p !=  <http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#hasChild>") # do not show hasChild predicates
+                          .filter("?p !=  <http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#hasParent>") # do not show hasParent predicates
                           .filter("!regex (str(?o), \"leased\")")
-                          .filter("?p != <http://open-multinet.info/ontology/omn-lifecycle#hasLease>")
+                          .filter("?p != <http://open-multinet.info/ontology/omn-lifecycle#hasLease>") # treat leases specifically, beneath
         query_graph << sparql.construct([s, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasLease"), :o])
                            .where([s, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasLease"), :o], [:o, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasReservationState"), :rs])
                            .filter("?rs != <http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#Cancelled/>")
                            .filter("?o != <http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#Pending/>")
+                           .filter("?o != <http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#Unallocated/>")
         output = JSON::LD::Writer.buffer do |writer|
           query_graph.collect { |q|
             writer << q
