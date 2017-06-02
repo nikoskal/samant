@@ -345,7 +345,7 @@ module OMF::SFA::AM
       # TODO not sure if it covers all the possible lease overlaps
       leases = SAMANT::Lease.find(:all, :conditions => { :isReservationOf => parent.to_uri } )
                    .select{|lease| (lease.hasReservationState.to_uri == SAMANT::ALLOCATED.to_uri || lease.hasReservationState.to_uri == SAMANT::PROVISIONED.to_uri)}
-                    .select{|lease| ((lease.startTime >= start_time) && (lease.expirationTime < end_time)) || ((lease.startTime <= start_time) && (lease.expirationTime > start_time)) }
+                    .select{|lease| ((lease.startTime >= start_time) && (lease.startTime < end_time)) || ((lease.startTime <= start_time) && (lease.expirationTime > start_time))}
       #if leases
       #debug "Reservation State autou pou vrika: " + leases.first.hasReservationState.inspect
       #debug "poio lease einai? " + leases.first.inspect + leases.first.clientID
@@ -475,6 +475,12 @@ module OMF::SFA::AM
       if t_now >= lease.startTime # the lease is active - create only the on_lease_end event
         @event_scheduler.in('0.1s', tag: "#{l_uuid}_start") do # praktika ksekina to twra
           #TODO RECONSIDER
+          url = "http://dtnmode3.lab.netmode.ntua.gr:8080/openrdf-sesame/repositories/samRemote"
+          Spira.repository = RDF::Sesame::Repository.new(url)
+          lease = SAMANT::Lease.find(:all, :conditions => { :hasID => l_uuid} ).first
+          break if lease.nil?
+          lease.hasReservationState = SAMANT::PROVISIONED #TODO RECONSIDER IF PROVISIONED
+          lease.save
           # not sure if bug
           #url = "http://dtnmode3.lab.netmode.ntua.gr:8080/openrdf-sesame/repositories/samRemote"
           #Spira.repository = RDF::Sesame::Repository.new(url)

@@ -276,20 +276,9 @@ module OMF::SFA::AM::Rest
       end
 
       authorizer = options[:req].session[:authorizer]
-
-      #rspec[:leases].each { |lease|
-      #  lease[:urns] = urns.first
-      #}
-      #rspec[:nodes].each { |node|
-      #  node[:urns] = urns.first
-      #}
-
-      #authorizer.account[:urn] = urns.first
-      #debug "autho" + authorizer.inspect
-      #debug "rspec = " + rspec.inspect
-      #raise OMF::SFA::AM::UnavailableResourceException.new "BREAKPOINT"
-      #TODO FIX THIS
+      #TODO FIX THIS: probably won't be needed when the credentials will come through myslice
       raise OMF::SFA::AM::InsufficientPrivilegesException.new unless authorizer.account[:urn] == urns.first
+
       resources = @am_manager.update_samant_resources_from_rspec(rspec, true, authorizer)
       debug "returned resources = " + resources.inspect
       leases_only = true
@@ -328,7 +317,6 @@ module OMF::SFA::AM::Rest
           tmp = {}
           tmp[:geni_sliver_urn]         = r.to_uri.to_s
           tmp[:geni_expires]            = r.expirationTime.to_s
-          #debug "Reservation Status vs SAMANT::ALLOCATED: " + lease.hasReservationState.uri + " vs " + SAMANT::ALLOCATED.uri
           tmp[:geni_allocation_status]  = if r.hasReservationState.uri == SAMANT::ALLOCATED.uri then "geni_allocated"
                                           else "geni_unallocated"
                                           end
@@ -413,6 +401,8 @@ module OMF::SFA::AM::Rest
       debug('Renew ', slice_urn, ' until <', expiration_time, '>')
 
       authorizer = options[:req].session[:authorizer]
+      #TODO FIX THIS: probably won't be needed when the credentials will come through myslice
+      raise OMF::SFA::AM::InsufficientPrivilegesException.new unless authorizer.account[:urn] == urns.first
 
       leases = []
       if slivers_only
@@ -432,12 +422,10 @@ module OMF::SFA::AM::Rest
         return ['application/json', JSON.pretty_generate(@return_struct)]
       end
 
-      # TODO currently only one lease renewal supported
+      # TODO: currently only one lease renewal supported
       leased_components = @am_manager.find_all_samant_components_for_account(slice_urn, authorizer)
       leased_components.delete_if {|c| !c.to_uri.to_s.include?"/leased"} # TODO FIX must return only child uxv nodes
       debug "Leased Components: " + leased_components.inspect
-
-      # TODO: check account/slice renew concept. Is it necessary?
 
       value = {}
       value[:geni_urn] = slice_urn
@@ -568,7 +556,6 @@ module OMF::SFA::AM::Rest
           value << tmp
         end
       else
-        # TODO FIND ACCOUNT
         leases = @am_manager.find_all_samant_leases(slice_urn, [SAMANT::ALLOCATED, SAMANT::PROVISIONED], authorizer)
         debug "leases = " + leases.inspect
         if leases.nil? || leases.empty?
@@ -585,9 +572,8 @@ module OMF::SFA::AM::Rest
           value << tmp
         end
       end
-      # TODO ELABORATE
+      # TODO: ELABORATE
       @am_manager.close_samant_account(slice_urn, authorizer)
-      #debug "Slice '#{slice_urn}' associated with account '#{account.id}:#{account.closed_at}'"
       debug "Slice '#{slice_urn}' deleted."
 
       @return_struct[:code][:geni_code] = 0

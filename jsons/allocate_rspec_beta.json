@@ -2,7 +2,7 @@
 {
   "options":
   {
-    "urns": ["urn:publicid:IDN+fed4fire:global:netmode1+slice+samant_testtest"]
+    "urns": ["urn:publicid:IDN+fed4fire:global:netmode1+slice+samant_test"]
   },
   "rspec":
   {
@@ -10,8 +10,8 @@
     "leases": [
       {
         "client_id": "test_lease",
-        "valid_from": "2017-6-01T15:58:00Z",
-        "valid_until": "2017-6-16T21:00:00Z"
+        "valid_from": "2017-6-20T15:58:00Z",
+        "valid_until": "2017-6-21T21:00:00Z"
       }
     ],
     "nodes": [

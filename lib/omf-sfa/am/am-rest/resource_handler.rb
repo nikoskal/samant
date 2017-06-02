@@ -210,7 +210,7 @@ module OMF::SFA::AM::Rest
                           .where([s, :p, :o])
                           .filter("?p !=  <http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#hasChild>") # do not show hasChild predicates
                           .filter("?p !=  <http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#hasParent>") # do not show hasParent predicates
-                          .filter("!regex (str(?o), \"leased\")")
+                          .filter("!regex (str(?o), \"leased@\")")
                           .filter("?p != <http://open-multinet.info/ontology/omn-lifecycle#hasLease>") # treat leases specifically, beneath
         query_graph << sparql.construct([s, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasLease"), :o])
                            .where([s, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasLease"), :o], [:o, RDF::URI.new("http://open-multinet.info/ontology/omn-lifecycle#hasReservationState"), :rs])
