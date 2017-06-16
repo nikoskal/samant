@@ -39,6 +39,11 @@ PATH
       thin (= 1.6.0)
       uuid (= 2.3.5)
 
+PATH
+  remote: modified_gems/rdf-sesame-2.0.2
+  specs:
+    rdf-sesame (2.0.2)
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -202,9 +207,6 @@ GEM
       rdf (~> 2.0)
     rdf-json (2.0.0)
       rdf (~> 2.0)
-    rdf-sesame (2.0.2)
-      addressable (~> 2.3)
-      rdf (~> 2.0)
     rdf-turtle (2.0.0)
       ebnf (~> 1.0, >= 1.0.1)
       rdf (~> 2.0)
@@ -271,6 +273,7 @@ DEPENDENCIES
   minitest (= 5.1)
   omf_sfa!
   rake
+  rdf-sesame (= 2.0.2)!
 
 BUNDLED WITH
    1.13.6
