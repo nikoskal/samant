@@ -11,7 +11,7 @@ You may skip this part if you already have ruby 2.0.0 and the libraries required
 
 First, install rvm:
 	
-	$ curl -sSL https://get.rvm.io | bash -s stable
+	$ curl https://raw.githubusercontent.com/rvm/rvm/master/binscripts/rvm-installer | bash -s stable
 
 After installation just restart your terminal and type:
 	
@@ -25,8 +25,8 @@ Make sure you install ruby 2.0.0 version
 
 Install xmlsec1, which is required by the am_server
 
-	$ apt-get install libxmlsec1-dev xmlsec1
-	$ apt-get install libsqlite3-dev
+	$ sudo apt-get install libxmlsec1-dev xmlsec1
+	$ sudo apt-get install libsqlite3-dev
 	$ gem install bundler
 
 
@@ -36,6 +36,7 @@ Installation
 The first step is to clone the SAM repository
 
     $ git clone -b omn/wip https://github.com/nikoskal/samant.git
+    $ mv samant omf_sfa
     $ cd omf_sfa
     $ export OMF_SFA_HOME=`pwd`
     $ bundle install
@@ -44,12 +45,45 @@ The first step is to clone the SAM repository
 Configuration
 -------------
 
-The file OMF_SFA_HOME/etc/omf-sfa/omf-sfa-am.yaml, is the central configuration file.
+This file, OMF_SFA_HOME/etc/omf-sfa/omf-sfa-am.yaml, is the central configuration file of SAM.
 
 	$ cd $OMF_SFA_HOME/etc/omf-sfa 
 	$ nano omf-sfa-am.yaml
+	
+change domain to omf:TESTBED_NAME*
 
-Make sure to change the domain to omf:netmode and the server to 10.0.0.200.
+*replace TESTBED_NAME with your testbed's name. For instance, at NETMODE we use "netmode".
+
+
+Semantic Graph Database & Ontologies
+------------------------------------
+
+Next you have to install the openrdf-sesame adaptor:
+
+	$ wget https://netix.dl.sourceforge.net/project/sesame/Sesame%204/4.1.2/openrdf-sesame-4.1.2-sdk.tar.gz
+
+Unzip the folder and deploy the openrdf-sesame.war and openrdf-sesame.war, located in the  openrdf-sesame-4.1.2/war folder. For the deployment you may use Apache Tomcat or any other known alternative of your choice.
+
+Now you are ready to deploy the Semantic Graph Database. Request a copy of GraphDB 8 from here: 
+
+	https://ontotext.com/products/graphdb/
+
+Unfortunately we can not provide you with a direct download link, but one will be available to you shortly after filling the required fields. Make sure to download it "as a standanlone server".
+
+When the download has finished, it is time to run the GraphDB instance. After unziping it,navigate to the downloaded folder and execute the following script.
+
+	$ cd /bin
+	$./graphdb
+
+The GraphDB Workbench is available at port 7200 of your machine. Visit localhost:7200 and create a new repository with the default settings. Then, visit the openrdf-workbench (location depending on where the adapter is deployed) and create a New repository. In the dropdown list, select the "Remote RDF Store" option. After clicking "Next" you will be prompted to specify the "Sesame server locations". Use the url of the GraphDB Workbench. For ID and Title use "remote". For the "Remote repository ID" use the name of the repository you created with the GraphDB Workbench and then click "Create".
+
+Now you should import the respective Ontologies. Firstly, download the Ontologies from 
+
+	http://samant.lab.netmode.ntua.gr/documents 
+
+Again, visit the GraphDB Workbench and click "Import" -> "RDF" -> "Local Files" and upload both of the downloaded files.
+
+Congratulations, your repository is now created and connected to the adapter!
 
 
 Relational Database
@@ -63,52 +97,38 @@ Use the Rakefile to set up the relational database, where the authorization/auth
 This will actually create an empty database based on the information defined on the configuration file.
 
 
-Semantic Graph Database & Ontologies
-------------------------------------
-
-Next you have to install the openrdf-sesame adaptor:
-
-	$ wget https://netix.dl.sourceforge.net/project/sesame/Sesame%204/4.1.2/openrdf-sesame-4.1.2-sdk.tar.gz
-
-Unzip the folder and deploy the openrdf-sesame.war and openrdf-sesame.war, located in the  openrdf-sesame-4.1.2/war folder. For the deployment you may use Apache Tomcat or any other known alternative of your choice.
-
-Now you are ready to deploy the Semantic Graph Database. Request a copy of GraphDB 8 from here: https://ontotext.com/products/graphdb/. Unfortunately we can not provide you with a direct download link, but one will be available to you shortly after filling the required fields.
-
-When the download has finished, it is time to run the GraphDB instance. Navigate to the downloaded folder and execute the following script.
-
-	$ cd /bin
-	$./graphdb
-
-The GraphDB Workbench is available at port 7200 of your machine. Visit localhost:7200 and create a new repository with the default settings. Then, visit the openrdf-workbench (location depending on where the adapter is deployed) and create a New repository. In the dropdown list, select the "Remote RDF Store" option. After clicking "Next" you will be prompted to specify the "Sesame server locations". Use the url of the GraphDB Workbench. For the "Remote repository ID" use the name of the repository you created with the GraphDB Workbench and then click "Create".
-
-Now you should import the respective Ontologies. Firstly, download the Ontologies from http://samant.lab.netmode.ntua.gr/documents . Again, visit the GraphDB Workbench and click "Import" -> "RDF" -> "Local Files" and upload both of the downloaded files.
-
-Congratulations, your repository is now created and connected to the adapter!
-
-
 Certificates
 ------------
 
 The directory which holds the certificates is specified in the configuration file.
 First we have to create a root self signed certificate for our testbed that will sign every other certificate we create.
 
-	$ omf_cert.rb --email root@netmode.ntua.gr -o root.pem --duration 50000000 create_root
+	$ omf_cert.rb --email root@DOMAIN** -o root.pem --duration 50000000 create_root
+
+*please replace DOMAIN with your tesbed's domain. For instance, at NETMODE testdbed, we use "netmode.ntua.gr".
 
 Then you have to copy this file to the trusted roots directory (defined in the configuration file)
 	
-	$ mkdir /root/.omf
-	$ mkdir /root/.omf/trusted_roots
-	$ cp root.pem /root/.omf/trusted_roots
+
+	$ mkdir ~/.omf
+	$ mkdir ~/.omf/trusted_roots
+	$ cp root.pem ~/.omf/trusted_roots
 
 Now we have to create the certificate used by am_server and copy it to the corresponding directory. Please notice that we are using the root certificate, we have just created, in --root argument.
 	
-	$ omf_cert.rb -o am.pem --geni_uri URI:urn:publicid:IDN+omf:netmode+user+am --email am@netmode.ntua.gr --resource-id xmpp://10.0.0.200@omf:netmode --resource-type am_controller --root root.pem --duration 50000000 create_resource
-	$ cp am.pem /root/.omf/
+	$ omf_cert.rb -o am.pem --geni_uri URI:urn:publicid:IDN+omf:TESTBED_NAME*+user+am --email am@DOMAIN** --resource-id xmpp://147.102.13.123:5269@omf:TESTBED_NAME* --resource-type am_controller --root root.pem --duration 50000000 create_resource
+	$ cp am.pem ~/.omf/
+
+*replace TESTBED_NAME with your testbed's name. For instance, at NETMODE we use "netmode".
+**once again, replace DOMAIN with your tesbed's domain. For instance, at NETMODE testdbed, we use "netmode.ntua.gr".
 
 We also have to create a user certificate (for root user) for the various scripts to use. You can use this command to create certificates for any user you wish. .
 	
-	$ omf_cert.rb -o user_cert.pem --geni_uri URI:urn:publicid:IDN+omf:netmode+user+root --email root@netmode.ntua.gr --user root --root root.pem --duration 50000000 create_user
-	$ cp user_cert.pem /root/.omf/
+	$ omf_cert.rb -o user_cert.pem --geni_uri URI:urn:publicid:IDN+omf:TESTBED_NAME*+user+root --email root@DOMAIN**  --user root --root root.pem --duration 50000000 create_user
+	$ cp user_cert.pem ~/.omf/
+
+*replace TESTBED_NAME with your testbed's name. For instance, at NETMODE we use "netmode".
+**once again, replace DOMAIN with your tesbed's domain. For instance, at NETMODE testdbed, we use "netmode.ntua.gr".
 
 Now open the above certificates with any text editor copy the private key at the bottom of the certificate (with the headings) create a new file (get the name of the private key from the corresponding configuration file) and paste the private key in this file. For example:
 	
@@ -122,15 +142,19 @@ copy something that looks like this
  kjYJDDXxhrU1yK/foHdT38v5TlGmSvbuubuWOskCJRoKkHfbOPlH
  \-----END RSA PRIVATE KEY-----
 
-	$ vi user_cert.pkey paste
+	$ vi user_cert.pkey 
 
-Repeat this process for the am.pem certificate (omf_am.pem and omf_am_key.pem). Also copy the am certificate to trusted_roots folder.
+and paste inside.
+
+Repeat this process for the am.pem certificate (am.pem and am_key.pem). Also copy the am certificate to trusted_roots folder.
 	
-	$ cp am.pem /root/.omf/trusted_roots
+	$ cp am.pem ~/.omf/trusted_roots
 
 Update the configuration file OMF_SFA_HOME/etc/omf-sfa/omf-sfa-am.yaml
 	
-	cert_chain_file: ~/.omf/omf_am.pem private_key_file: ~/.omf/omf_am_key.pem trusted_roots: ~/.omf/trusted_roots
+	cert_chain_file: ~/omf_sfa/am.pem 
+	private_key_file: ~/omf_sfa/am_key.pem 
+	trusted_roots: ~/.omf/trusted_roots
 
 
 Starting a Test SAM
@@ -218,11 +242,11 @@ A json file that describes the resources is required. This file can contain eith
 
 To populate the database with the resources:
 
-	$ curl --cert certs_p12/root.p12:pass -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST -d @jsons/cr_uxv.json -k https://localhost:443/admin/create
+	$ curl --cert user_cert.pem --key user_cert.pkey -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST-d @jsons/cr_uxv.json -k https://localhost:443/admin/create
 
 Now let's use the REST interface again to see the data we created:
 
-	$ curl --cert certs_p12/root.p12:pass -i -H "Accept: application/json" -H "Content-Type:application/json" -X GET -d @jsons/get_inf.json -k https://localhost:443/admin/getinfo
+	$ curl --cert user_cert.pem --key user_cert.pkey -i -H "Accept: application/json" -H "Content-Type:application/json" -X GET d @jsons/get_inf.json -k https://localhost:443/admin/getinfo
 
 
 Testing REST API
