@@ -79,11 +79,11 @@ When the download has finished, it is time to run the GraphDB instance. Navigate
 	$ cd /bin
 	$./graphdb
 
-The GraphDB Workbench is available at port 7200 of your machine. Visit localhost:7200 and create a new repository with the default settings. Then, visit the openrdf-workbench (location depending on where the adaptor is deployed) and create a New repository. In the dropdown list, select the "Remote RDF Store" option. After clicking "Next" you will be prompted to specify the "Sesame server locations". Use the url of the GraphDB Workbench. For the "Remote repository ID" use the name of the repository you created with the GraphDB Workbench and then click "Create".
+The GraphDB Workbench is available at port 7200 of your machine. Visit localhost:7200 and create a new repository with the default settings. Then, visit the openrdf-workbench (location depending on where the adapter is deployed) and create a New repository. In the dropdown list, select the "Remote RDF Store" option. After clicking "Next" you will be prompted to specify the "Sesame server locations". Use the url of the GraphDB Workbench. For the "Remote repository ID" use the name of the repository you created with the GraphDB Workbench and then click "Create".
 
 Now you should import the respective Ontologies. Firstly, download the Ontologies from http://samant.lab.netmode.ntua.gr/documents . Again, visit the GraphDB Workbench and click "Import" -> "RDF" -> "Local Files" and upload both of the downloaded files.
 
-Congratulations, your repository is now created and connected to the adaptor!
+Congratulations, your repository is now created and connected to the adapter!
 
 
 Certificates
@@ -100,7 +100,7 @@ Then you have to copy this file to the trusted roots directory (defined in the c
 	$ mkdir /root/.omf/trusted_roots
 	$ cp root.pem /root/.omf/trusted_roots
 
-Now we have to create the certificate used by am_server and copy it to the coresponding directory. Please notice that we are using the root certificate, we have just created, in --root argument.
+Now we have to create the certificate used by am_server and copy it to the corresponding directory. Please notice that we are using the root certificate, we have just created, in --root argument.
 	
 	$ omf_cert.rb -o am.pem --geni_uri URI:urn:publicid:IDN+omf:netmode+user+am --email am@netmode.ntua.gr --resource-id xmpp://10.0.0.200@omf:netmode --resource-type am_controller --root root.pem --duration 50000000 create_resource
 	$ cp am.pem /root/.omf/
@@ -228,7 +228,7 @@ Now let's use the REST interface again to see the data we created:
 Testing REST API
 ----------------
 
-The most enriched way to interact with SAM is through it's REST API. Start with listing all available resources:
+The most enriched way to interact with SAM is through its REST API. Start with listing all available resources:
 
    $ curl --cert certs_p12/root.p12:pass -i -H 'Accept: application/json' -H 'Content-Type:application/json' -X GET -d @jsons/LR_options.json -k https://localhost:443/samant/listresources
 
