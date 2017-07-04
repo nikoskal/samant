@@ -75,7 +75,7 @@ When the download has finished, it is time to run the GraphDB instance. After un
 	$ cd /bin
 	$./graphdb
 
-The GraphDB Workbench is available at port 7200 of your machine. Visit localhost:7200 and create a new repository with the default settings. Then, visit the openrdf-workbench (location depending on where the adapter is deployed) and create a New repository. In the dropdown list, select the "Remote RDF Store" option. After clicking "Next" you will be prompted to specify the "Sesame server locations". Use the url of the GraphDB Workbench. For ID and Title use "remote". For the "Remote repository ID" use the name of the repository you created with the GraphDB Workbench and then click "Create".
+The GraphDB Workbench is available at port 7200 of your machine. Visit localhost:7200 and create a new repository with the default settings. Then, visit the openrdf-workbench (location depending on where the adapter is deployed) and create a New repository. In the dropdown list, select the "Remote RDF Store" option. After clicking "Next" you will be prompted to specify the "Sesame server locations". Use the url of the GraphDB Workbench(http://localhost:7200). For ID and Title use "remote". For the "Remote repository ID" use the name of the repository you created with the GraphDB Workbench and then click "Create".
 
 Now you should import the respective Ontologies. Firstly, download the Ontologies from 
 
