@@ -1,4 +1,5 @@
 *.gem
+*.gem
 *.rbc
 /.config
 /coverage/
@@ -54,3 +55,4 @@ build-iPhoneSimulator/
 /root_certs
 /certs_p12
 /certs_pem
+.idea
