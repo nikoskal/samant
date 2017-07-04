@@ -62,7 +62,7 @@ Next you have to install the openrdf-sesame adaptor:
 
 	$ wget https://netix.dl.sourceforge.net/project/sesame/Sesame%204/4.1.2/openrdf-sesame-4.1.2-sdk.tar.gz
 
-Unzip the folder and deploy the openrdf-sesame.war and openrdf-sesame.war, located in the  openrdf-sesame-4.1.2/war folder. For the deployment you may use Apache Tomcat or any other known alternative of your choice.
+Unzip the folder and deploy the openrdf-sesame.war and openrdf-workbench.war, located in the  openrdf-sesame-4.1.2/war folder. For the deployment you may use Apache Tomcat or any other known alternative of your choice.
 
 Now you are ready to deploy the Semantic Graph Database. Request a copy of GraphDB 8 from here: 
 
