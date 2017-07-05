@@ -189,16 +189,13 @@ module OMF::SFA::AM::RPC::V3
     def translate_omn_rspec(filename)
 
       puts 'omn for translation :' + filename.to_s
-      command_name = "java -jar ./test/omn_translator/omnlib-jar-with-dependencies.jar -o advertisement -i #{filename}"
+      command_name = "java -jar ./lib/omf-sfa/am/am-rpc/omn_translator/omnlib-jar-with-dependencies.jar -o advertisement -i #{filename}"
       debug "call java cmd: " +command_name
-      result = `java -jar ./test/omn_translator/omnlib-jar-with-dependencies.jar -o advertisement -i #{filename}`
+      result = `java -jar ./lib/omf-sfa/am/am-rpc/omn_translator/omnlib-jar-with-dependencies.jar -o advertisement -i #{filename}`
       debug " translated "
       debug result
-
-      return result
+      result
     end
-
-
 
 
     def list_resources_original (credentials, options)
