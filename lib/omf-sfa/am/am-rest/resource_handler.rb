@@ -368,7 +368,7 @@ module OMF::SFA::AM::Rest
           writer << g
         }
       end
-
+      return filename
     end
 
     def resource_to_json(resource, path, opts, already_described = {})

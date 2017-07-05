@@ -163,7 +163,6 @@ module OMF::SFA::AM::RPC::V3
         translated = translate_omn_rspec(filename)
         debug "3 translated: " + translated.inspect
 
-        # debug 'translated '+translated.to_s
 
         # res = OMF::SFA::AM::Rest::ResourceHandler.omn_response_json(resources, options) # -> returns the json formatted results (more detailed, omn enriched)
         # TODO insert identifier to res so to distinguish advertisement from request from manifest etc. (see also am_rpc_service)
@@ -187,33 +186,17 @@ module OMF::SFA::AM::RPC::V3
     end
 
 
-
-
-
     def translate_omn_rspec(filename)
 
       puts 'omn for translation :' + filename.to_s
-
-      # TODO uncomment when translator is ready
-      # file = Tempfile.new('beforeTrans')
-      # file.write(filename)
-      # file.rewind
       command_name = "java -jar ./test/omn_translator/omnlib-jar-with-dependencies.jar -o advertisement -i #{filename}"
-      puts "call java cmd: " +command_name
-
+      debug "call java cmd: " +command_name
       result = `java -jar ./test/omn_translator/omnlib-jar-with-dependencies.jar -o advertisement -i #{filename}`
-
       debug " translated "
       debug result
-      debug " finished "
 
       return result
     end
-
-
-
-
-
 
 
 
