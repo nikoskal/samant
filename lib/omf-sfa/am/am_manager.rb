@@ -928,6 +928,14 @@ module OMF::SFA::AM
 
     def create_samant_resource(resource_descr, resource_type, authorizer)
       debug "@create_samant_resource"
+      debug "authorizer"
+
+      debug resource_descr.inspect
+      debug resource_type.inspect
+      debug authorizer.inspect
+
+      # raise InsufficientPrivilegesException unless authorizer.can_create_resource?(resource_descr, resource_type)
+      # TODO check can_create_samant_resource
       raise InsufficientPrivilegesException unless authorizer.can_create_samant_resource?(resource_descr, resource_type)
 
       unless resource_descr[:hasSliceID]
@@ -995,6 +1003,8 @@ module OMF::SFA::AM
 
     def release_samant_resource(resource, authorizer)
       debug "release_samant_resource: '#{resource.inspect}'"
+      # raise InsufficientPrivilegesException unless authorizer.can_release_resource?(resource)
+      # TODO check this
       raise InsufficientPrivilegesException unless authorizer.can_release_samant_resource?(resource)
       @scheduler.release_samant_resource(resource)
     end
