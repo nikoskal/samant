@@ -161,10 +161,10 @@ module OMF::SFA::AM::Rest
       true
     end
 
-    protected
+    # protected
 
     def initialize(account, user, am_manager)
-      debug "Initialize for account: #{account} and user: #{user.inspect})"
+      debug "Initialize for account: #{account.inspect} and user: #{user.inspect})"
       @user = user
       @am_manager = am_manager
 
