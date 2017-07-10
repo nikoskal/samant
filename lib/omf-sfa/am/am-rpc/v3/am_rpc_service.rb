@@ -21,6 +21,7 @@ end
 module OMF::SFA::AM::RPC::V3
 
   OL_NAMESPACE = "http://nitlab.inf.uth.gr/schema/sfa/rspec/1"
+  $acceptable_lease_states = [SAMANT::ALLOCATED, SAMANT::PROVISIONED, SAMANT::PENDING]
 
   class NotAuthorizedException < XMLRPC::FaultException; end
 
@@ -215,7 +216,7 @@ module OMF::SFA::AM::RPC::V3
     end
 
 
-    def list_resources_original (credentials, options)
+    def list_resources_obsolete (credentials, options)
 
       debug 'Credentials: ', credentials.inspect
       debug 'ListResources: Options: ', options.inspect
@@ -273,6 +274,7 @@ module OMF::SFA::AM::RPC::V3
       return @return_struct
     end
 
+
     def describe(urns, credentials, options)
       debug 'Describe: URNS: ', urns.inspect, ' Options: ', options.inspect
 
@@ -308,6 +310,123 @@ module OMF::SFA::AM::RPC::V3
         return @return_struct
       end
 
+      # authorizer = OMF::SFA::AM::RPC::AMAuthorizer.create_for_sfa_request(slice_urn, credentials, @request, @manager)
+      temp_authorizer = OMF::SFA::AM::RPC::AMAuthorizer.create_for_sfa_request(slice_urn, credentials, @request, @manager)
+      debug temp_authorizer.account.inspect
+      authorizer = OMF::SFA::AM::Rest::AMAuthorizer.new(temp_authorizer.account.name, temp_authorizer.user, @manager)
+
+      # resources = []
+      # leases = []
+      # if slivers_only
+      #   urns.each do |urn|
+      #     l = @manager.find_lease({urn: urn}, authorizer)
+      #     resources << l
+      #     leases << l
+      #     l.components.each do |comp|
+      #       resources << comp if comp.account.id == authorizer.account.id
+      #     end
+      #   end
+      # else
+      #   resources =  @manager.find_all_leases(authorizer.account, ["pending", "accepted", "active"], authorizer)
+      #   leases = resources.dup
+      #   resources.concat(@manager.find_all_components_for_account(authorizer.account, authorizer))
+      # end
+      resources = []
+      leases = []
+      if slivers_only
+        urns.each do |urn|
+          l = @manager.find_samant_lease(urn, authorizer)
+          resources << l
+          leases << l
+          l.isReservationOf.each do |comp|
+            resources << comp if comp.hasSliceID == authorizer.account[:urn]
+          end
+        end
+      else
+        resources = @manager.find_all_samant_leases(slice_urn, $acceptable_lease_states, authorizer)
+        leases = resources.dup
+        components = @manager.find_all_samant_components_for_account(slice_urn, authorizer)
+        #components.collect! { |r| (r.kind_of?SAMANT::Uxv) && r.hasParent ? r.hasParent : r } # Replace child nodes with parent nodes
+        resources.concat(components)
+      end
+
+
+      filename = OMF::SFA::AM::Rest::ResourceHandler.rspecker(resources, :Offering) # -> creates the advertisement rspec file inside /ready4translation (less detailed, sfa enabled)
+      debug "2 filename: " + filename.inspect
+
+      translated = translate_omn_rspec(filename)
+      debug "3 translated: " + translated.inspect
+
+      debug "4 leases: " + leases.inspect
+
+
+      # res = OMF::SFA::Model::Component.sfa_response_xml(resources, type: 'manifest').to_xml
+      value = {}
+      value[:geni_rspec] = translated
+      value[:geni_urn] = slice_urn
+      value[:geni_slivers] = []
+      # TODO check how to get the leases
+      # leases.each do |lease|
+      #   tmp = {}
+      #   debug "5 lease: " + lease.inspect
+      #   lease = SAMANT::Lease.for(lease.to_s)
+      #   tmp[:geni_sliver_urn]         = lease.hasSliceID
+      #   tmp[:geni_expires]            = lease.expirationTime.to_s
+      #   tmp[:geni_allocation_status]  = lease.hasStatusMessage
+      #   value[:geni_slivers] << tmp
+      # end
+
+      if compressed
+        res = Base64.encode64(Zlib::Deflate.deflate(translated))
+      end
+
+      @return_struct[:code][:geni_code] = 0
+      @return_struct[:value] = value
+      @return_struct[:output] = ''
+      return @return_struct
+    rescue OMF::SFA::AM::InsufficientPrivilegesException => e
+      @return_struct[:code][:geni_code] = 3
+      @return_struct[:output] = e.to_s
+      @return_struct[:value] = ''
+      return @return_struct
+    end
+
+
+    def describe_obsolete(urns, credentials, options)
+      debug 'Describe: URNS: ', urns.inspect, ' Options: ', options.inspect
+
+      if urns.nil? || urns.empty?
+        @return_struct[:code][:geni_code] = 1 # Bad Arguments
+        @return_struct[:output] = "Arguement 'urns' is either empty or nil."
+        @return_struct[:value] = ''
+        return @return_struct
+      end
+
+      compressed = options["geni_compressed"]
+      rspec_version = options["geni_rspec_version"]
+
+      if rspec_version.nil?
+        @return_struct[:code][:geni_code] = 1 # Bad Arguments
+        @return_struct[:output] = "'geni_rspec_version' argument is missing."
+        @return_struct[:value] = ''
+        return @return_struct
+      end
+      unless rspec_version["type"].downcase.eql?("geni") && (!rspec_version["version"].eql?("3.0") ||
+          !rspec_version["version"].eql?("3"))
+        @return_struct[:code][:geni_code] = 4 # Bad Version
+        @return_struct[:output] = "'Version' or 'Type' of RSpecs are not the same with what 'GetVersion' returns."
+        @return_struct[:value] = ''
+        return @return_struct
+      end
+
+      slice_urn, slivers_only, error_code, error_msg = parse_urns(urns)
+      if error_code != 0
+        @return_struct[:code][:geni_code] = error_code
+        @return_struct[:output] = error_msg
+        @return_struct[:value] = ''
+        return @return_struct
+      end
+
       authorizer = OMF::SFA::AM::RPC::AMAuthorizer.create_for_sfa_request(slice_urn, credentials, @request, @manager)
 
       resources = []
@@ -326,7 +445,7 @@ module OMF::SFA::AM::RPC::V3
         leases = resources.dup
         resources.concat(@manager.find_all_components_for_account(authorizer.account, authorizer))
       end
-      
+
       res = OMF::SFA::Model::Component.sfa_response_xml(resources, type: 'manifest').to_xml
       value = {}
       value[:geni_rspec] = res
@@ -355,7 +474,6 @@ module OMF::SFA::AM::RPC::V3
       @return_struct[:value] = ''
       return @return_struct
     end
-
 
 
 
