@@ -385,10 +385,7 @@ module OMF::SFA::AM::RPC::V3
       end
 
       temp_authorizer = OMF::SFA::AM::RPC::AMAuthorizer.create_for_sfa_request(slice_urn, credentials, @request, @manager)
-      debug "-----------------------+"
       debug temp_authorizer.account.inspect
-
-
       authorizer = OMF::SFA::AM::Rest::AMAuthorizer.new(temp_authorizer.account.name, temp_authorizer.user, @manager)
 
       rspec = Nokogiri::XML.parse(rspec_s)
@@ -974,8 +971,56 @@ module OMF::SFA::AM::RPC::V3
       return @return_struct
     end
 
+
+
+
     # close the account and release the attached resources
     def delete(urns, credentials, options)
+      debug('DeleteSliver: URNS: ', urns.inspect, ' Options: ', options.inspect)
+
+      if urns.nil? || urns.empty? || credentials.nil?
+        @return_struct[:code][:geni_code] = 1 # Bad Arguments
+        @return_struct[:output] = "Some of the following arguments are missing: 'urns', 'credentials'"
+        @return_struct[:value] = ''
+        return @return_struct
+      end
+
+      slice_urn, slivers_only, error_code, error_msg = parse_urns(urns)
+      if error_code != 0
+        @return_struct[:code][:geni_code] = error_code
+        @return_struct[:output] = error_msg
+        @return_struct[:value] = ''
+        return @return_struct
+      end
+
+      # authorizer = OMF::SFA::AM::RPC::AMAuthorizer.create_for_sfa_request(slice_urn, credentials, @request, @manager)
+      temp_authorizer = OMF::SFA::AM::RPC::AMAuthorizer.create_for_sfa_request(slice_urn, credentials, @request, @manager)
+      debug temp_authorizer.account.inspect
+      authorizer = OMF::SFA::AM::Rest::AMAuthorizer.new(temp_authorizer.account.name, temp_authorizer.user, @manager)
+
+      value = []
+      @manager.close_samant_account(slice_urn, authorizer).each do |l|
+        debug('------------- variable slice_urn----------------- : ', l.inspect)
+        tmp = {}
+        tmp[:geni_sliver_urn] = slice_urn
+        tmp[:geni_allocation_status] = 'geni_unallocated'
+        value << tmp
+      end
+
+      @return_struct[:code][:geni_code] = 0
+      @return_struct[:value] = value
+      @return_struct[:output] = ''
+      return @return_struct
+    rescue OMF::SFA::AM::UnavailableResourceException => e
+      @return_struct[:code][:geni_code] = 12 # Search Failed
+      @return_struct[:output] = e.to_s
+      @return_struct[:value] = ''
+      return @return_struct
+    end
+
+
+    # close the account and release the attached resources
+    def delete_obsolete(urns, credentials, options)
       debug('DeleteSliver: URNS: ', urns.inspect, ' Options: ', options.inspect)
 
       if urns.nil? || urns.empty? || credentials.nil?
