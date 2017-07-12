@@ -118,9 +118,10 @@ module OMF::SFA::AM::Rest
       slice_urn = params[:slice_urn]
 
       authorizer = options[:req].session[:authorizer]
+      # debug "!!!authorizer = " + authorizer.inspect
 
-      # debug "!!!USER = " + authorizer.user.inspect
-      # debug "!!!ACCOUNT = " + authorizer.account.inspect
+      debug "!!!USER = " + authorizer.user.inspect
+      debug "!!!ACCOUNT = " + authorizer.account.inspect
       # debug "!!!ACCOUNT_URN = " + authorizer.account[:urn]
       # debug "!!!ACCOUNT = " + authorizer.user.accounts.first.inspect
 
