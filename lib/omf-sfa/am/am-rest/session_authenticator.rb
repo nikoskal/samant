@@ -89,8 +89,32 @@ module OMF::SFA::AM::Rest
       # end
 
       if method == 'GET'
-        #debug "Rest Request: " + req.inspect
-        debug "GET REST REQUEST"
+        # debug "Rest Request: " + req.inspect
+        # debug "GET REST REQUEST"
+        #
+        # body = req.body
+        # unless body.nil?
+        #   debug "body = " + body.gets
+        # raise EmptyBodyException.new if body.nil?
+        # (body = body.string) if body.is_a? StringIO
+        # if body.is_a? Tempfile
+        #   tmp = body
+        #   body = body.read
+        #   tmp.rewind
+        # end
+        # raise EmptyBodyException.new if body.empty?
+        #
+        # content_type = req.content_type
+        # raise UnsupportedBodyFormatException.new unless content_type == 'application/json'
+        #
+        # jb = JSON.parse(body)
+        # debug "json body = " + jb.inspect
+        # account = nil
+        # if jb.kind_of? Hash
+        #   account = jb['account'].nil? ? nil : jb['account']['name']
+        # end
+
+        # req.session[:authorizer] = AMAuthorizer.create_for_rest_request(env['rack.authenticated'], env['rack.peer_cert'], req.params["account"], @opts[:am_manager])
         req.session[:authorizer] = AMAuthorizer.create_for_rest_request(env['rack.authenticated'], env['rack.peer_cert'], req.params["account"], @opts[:am_manager])
       elsif method == 'OPTIONS'
         #do nothing for OPTIONS  
@@ -99,6 +123,7 @@ module OMF::SFA::AM::Rest
       else
         debug "MISC REST REQUEST"
         body = req.body
+        debug "body = " + body.gets
         raise EmptyBodyException.new if body.nil?
         (body = body.string) if body.is_a? StringIO
         if body.is_a? Tempfile

@@ -1,6 +1,6 @@
 {
   "options": {
-    "type": ["UaV"],
+    "type": ["WiredInterface"],
     "description": {
     }
   }

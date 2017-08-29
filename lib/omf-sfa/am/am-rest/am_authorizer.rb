@@ -44,7 +44,7 @@ module OMF::SFA::AM::Rest
         raise OMF::SFA::AM::InsufficientPrivilegesException.new "URN and UUID are missing." if user_descr.empty?
 
         begin
-          #user = am_manager.find_user(user_descr) !!! EXW ALLAKSEI
+          #user = am_manager.find_user(user_descr) !!! CHANGED
           user = am_manager.find_or_create_user(user_descr)
         rescue OMF::SFA::AM::UnavailableResourceException
           raise OMF::SFA::AM::InsufficientPrivilegesException.new "User: '#{user_descr}' does not exist"
@@ -168,6 +168,7 @@ module OMF::SFA::AM::Rest
       @user = user
       @am_manager = am_manager
 
+      # KANTO IDIO ME TO RPC AUTHORIZER
       if @user.nil? # an den exw account
         permissions = {
           can_create_account?:   false,
@@ -188,9 +189,30 @@ module OMF::SFA::AM::Rest
       else # an exw account vres to
         super()
         # @account = am_manager.find_account({name: account}, self) if account
+
+        # ADEDEDEDEDEDEDEDEDEDEDEDE
+        # acc_name = create_account_name_from_urn(account)
+        #
+        # @account = am_manager.find_or_create_account({:urn => account, :name => acc_name}, self)
+        # # KSESXOLIASE TA MOLIS PAREIS TA CREDENTIALS
+        # # debug "Renewing account '#{@account.name}' until '#{@user_cred.valid_until}'"
+        # # am_manager.renew_account_until(@account, @user_cred.valid_until, self)
+        # @account = @user.accounts.first if @account.nil?
+        # if @account.closed?
+        #   if @permissions[:can_create_account?]
+        #     @account.closed_at = nil
+        #   else
+        #     raise OMF::SFA::AM::InsufficientPrivilegesException.new("You don't have the privilege to enable a closed account")
+        #   end
+        # end
+        # @account.add_user(@user) unless @account.users.include?(@user)
+        # @account.save
+        # debug "!!! ACCOUNT !!! = " + @account.inspect
+
+        # ADEDEDEDEDEDEDEDEDEDEDEDE ENDENDENDEND
+
         @account = OMF::SFA::Model::Account.first({name: account}) if account # epistrefei tin prwti emfanisi tou account
         @account = @user.accounts.first if @account.nil?
-        debug "!!! ACCOUNT !!! = " + @account.inspect
 
         if @account.closed?
           raise OMF::SFA::AM::InsufficientPrivilegesException.new("The account '#{@account.name}' is closed.")

@@ -110,6 +110,15 @@ map "/samant" do
   run OMF::SFA::AM::Rest::SamantHandler.new(opts[:am][:manager], opts)
 end
 
+map "/reasoner" do
+  use OMF::SFA::AM::Rest::SessionAuthenticator, #:expire_after => 10,
+      :login_url => (REQUIRE_LOGIN ? '/login' : nil),
+      :no_session => ['^/$', "^#{RPC_URL}", '^/login', '^/logout', '^/readme', '^/assets'],
+      :am_manager => am_mgr
+  require 'omf-sfa/am/am-rest/samant_reasoner'
+  run OMF::SFA::AM::Rest::SamantReasoner.new(opts[:am][:manager], opts)
+end
+
 map "/admin" do
   use OMF::SFA::AM::Rest::SessionAuthenticator, #:expire_after => 10,
       :login_url => (REQUIRE_LOGIN ? '/login' : nil),
