@@ -122,6 +122,7 @@ module OMF::SFA::AM::Rest
             raise OMF::SFA::AM::Rest::BadRequestException.new "Resource '#{res.inspect}' already exists."
           end
           authorizer.can_create_resource?(res, type)
+          # debug "Res:" + res.inspect
           res.save!
         end
         resources << res
@@ -189,8 +190,12 @@ module OMF::SFA::AM::Rest
             end
             descr[key] = eval("SAMANT::#{gurn.type.camelize}").for(gurn.to_s)
           elsif value.include? "http" # Instance found, i.e HealthStatus, Resource Status etc
-            type = value.split("#").last.chop
-            new_res = eval("SAMANT::#{type}").for("")
+            type = value.split("#").last
+            # type = value.split("#").last.chop
+            type = type.chop if type[-1,1] == "/"
+            debug "Type: " + type
+            # new_res = eval("SAMANT::#{type}").for("")
+            new_res = eval("SAMANT::#{type.upcase}")
             unless sparql.ask.whether([new_res.to_uri, :p, :o]).true?
               raise OMF::SFA::AM::Rest::BadRequestException.new "Resource '#{new_res.inspect}' not found. Please create that first."
             end

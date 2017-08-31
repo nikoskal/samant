@@ -1,34 +1,57 @@
 {
   "resources": {
-    "name": "netmode1",
+    "name": "netmode4",
     "type": "uxv",
     "authority": "samant",
     "resource_description": {
-      "hasComponentID": "urn:publicid:IDN+samant+uxv+netmode1",
+      "hasComponentID": "urn:publicid:IDN+samant+uxv+netmode4",
       "hasSliceID": "urn:publicid:IDN+omf:netmode+account+__default__",
-      "resourceId": "UxV_NETMODE1",
+      "resourceId": "UxV_NETMODE4",
       "hasInterface": [
         {
-          "name": "uav1:wlan0",
+          "name": "uav1:wlan110",
           "type": "wireless_interface",
           "authority": "samant",
           "resource_description": {
-            "hasComponentID": "urn:publicid:IDN+samant+wireless_interface+uav1:wlan0",
-            "hasComponentName": "uav1:wlan0",
+            "hasComponentID": "urn:publicid:IDN+samant+wireless_interface+uav1:wlan110",
+            "hasComponentName": "uav1:wlan110",
             "hasRole": "experimental"
           }
         },
         {
-          "name": "uav1:eth0",
+          "name": "uav1:eth160",
           "type": "wired_interface",
           "authority": "samant",
           "resource_description": {
-            "hasComponentID": "urn:publicid:IDN+samant+wired_interface+uav1:eth0",
-            "hasComponentName": "uav1:eth0",
+            "hasComponentID": "urn:publicid:IDN+samant+wired_interface+uav1:eth160",
+            "hasComponentName": "uav1:eth160",
             "hasRole": "experimental"
           }
         }
       ],
+      "hasSensorSystem": {
+        "name": "test:system8",
+        "type": "system",
+        "authority": "samant",
+        "resource_description": {
+          "hasDescription": "Temperature",
+          "hasProductName": "Testing Sensor 12348",
+          "hasVendorName": "RAWFIE",
+          "hasSerial": "abc1238",
+          "hasHealthStatus": "http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#OK",
+          "hasSubSystem": [
+            {
+              "name": "test:sensor8",
+              "type": "sensing_device",
+              "authority": "samant",
+              "resource_description": {
+                "hasUnit": "http://purl.oclc.org/NET/ssnx/qu/unit#degreeCelsius",
+                "observes": "http://purl.oclc.org/NET/ssnx/qu/quantity#temperature"
+              }
+            }
+          ]
+        }
+      },
       "hasUxVType": "http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#UaV/"
     }
   }

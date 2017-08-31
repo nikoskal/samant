@@ -1,6 +1,6 @@
 {
   "options": {
-    "type": ["WiredInterface"],
+    "type": ["SensingDevice"],
     "description": {
     }
   }

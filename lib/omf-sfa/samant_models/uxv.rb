@@ -12,7 +12,7 @@ module SAMANT
   OMNlifecycle = RDF::Vocabulary.new("http://open-multinet.info/ontology/omn-lifecycle#")
   OMNfederation = RDF::Vocabulary.new("http://open-multinet.info/ontology/omn-federation#")
   OMNwireless = RDF::Vocabulary.new("http://open-multinet.info/ontology/omn-domain-wireless#")
-  SAMANTuxv = RDF::Vocabulary.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#")
+  # SAMANTuxv = RDF::Vocabulary.new("http://www.semanticweb.org/rawfie/samant/omn-domain-uxv#")
   FOAF = RDF::Vocabulary.new("http://xmlns.com/foaf/0.1/")
   GML = RDF::Vocabulary.new("http://www.opengis.net/gml/")
   GEO = RDF::Vocabulary.new("http://www.georss.org/georss/")
@@ -73,9 +73,11 @@ module SAMANT
     property :isInterfaceOf, :predicate => OMNresource.isInterfaceOf, :type => :Uxv
     # Data Properties
     property :hasID, :predicate => OMNlifecycle.hasID, :type => RDF::XSD.string
+    property :hasInterfaceType, :predicate => SAMANTuxv.hasInterfaceType, :type => RDF::XSD.string
     property :hasComponentName, :predicate => OMNlifecycle.hasComponentName, :type => RDF::XSD.string
     property :hasComponentID, :predicate => OMNlifecycle.hasComponentID, :type => XSD.anyURI
     property :hasRole, :predicate => OMNlifecycle.hasRole, :type => RDF::XSD.string
+    property :consumesPower, :predicate => SAMANTuxv.consumesPower, :type => RDF::XSD.string
   end
 
   class ReservationState < Spira::Base
@@ -260,6 +262,7 @@ module SAMANT
     property :diameter, :predicate => SAMANTuxv.diameter, :type => RDF::XSD.double
     property :endurance, :predicate => SAMANTuxv.endurance, :type => RDF::XSD.integer
     property :battery, :predicate => SAMANTuxv.battery, :type => RDF::XSD.integer
+    property :consumesPower, :predicate => SAMANTuxv.consumesPower, :type => RDF::XSD.string
   end
 
   class Lease < Reservation
